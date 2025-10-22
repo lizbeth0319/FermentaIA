@@ -38,9 +38,11 @@ import { apiFetch } from "./http";
 import { API } from "./endpoints";
 
 export async function login(data: LoginPayload) {
+  // Backend espera { email, contrasena }
+  const body = { email: data.email, contrasena: data.password } as const;
   return apiFetch<{ token: string }>(API.auth.login(), {
     method: "POST",
-    body: data,
+    body,
     // onSuccess: guarda token
     after: (res) => {
       if (res?.token) authToken.set(res.token);

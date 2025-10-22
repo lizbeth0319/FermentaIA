@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 
 // Importa todas tus rutas
 import productoresRoutes from "./routers/Productor.js";
@@ -18,7 +19,15 @@ dotenv.config();
 const app = express();
 
 app.use(express.json());
+<<<<<<< Updated upstream
 app.use(cors());
+=======
+app.use(cors({
+  origin: ["http://localhost:8080", "http://localhost:8081"],
+  credentials: true,
+}));
+
+>>>>>>> Stashed changes
 // Rutas
 app.use("/api/auth", authetication);
 app.use("/api/productores", productoresRoutes);

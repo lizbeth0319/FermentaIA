@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Thermometer, Droplet, Mic, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
+import { apiFetch } from "@/api/http";
+import { API } from "@/api/endpoints";
 
 const Mediciones = () => {
   const navigate = useNavigate();
+  const [lotes, setLotes] = useState<any[]>([]);
+  const [loadingLotes, setLoadingLotes] = useState<boolean>(true);
   const [formData, setFormData] = useState({
     lote: "",
     fase: "",
@@ -19,17 +23,63 @@ const Mediciones = () => {
     observaciones: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Guardado local simulado
-    const params = new URLSearchParams({
-      lote: formData.lote || "lote",
-      ph: formData.ph || "0",
-      temp: formData.temperatura || "0",
-    });
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoadingLotes(true);
+        const lotesResp = await apiFetch<any[]>(API.lotes.list());
+        setLotes(lotesResp || []);
+      } catch (error: any) {
+        toast("Error al cargar lotes", { description: error.message || "No se pudieron cargar los lotes" });
+      } finally {
+        setLoadingLotes(false);
+      }
+    };
+    load();
+  }, []);
 
-    toast("Medición guardada", { description: "Tus datos se han registrado correctamente." });
-    navigate(`/comparativas?${params.toString()}`);
+  const mapFaseToBackend = (fase: string) => {
+    // Backend espera: 'inicio' | 'medio' | 'final'
+    if (fase === "media") return "medio";
+    if (fase === "fin") return "final";
+    return fase; // "inicio" mantiene igual
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (!formData.lote) {
+        toast("Selecciona un lote", { description: "Debes elegir un lote para guardar" });
+        return;
+      }
+
+      const selectedLote = lotes.find((l) => (l._id || l.id) === formData.lote);
+
+      const payload = {
+        lote_id: formData.lote,
+        fase: mapFaseToBackend(formData.fase),
+        temperatura_c: Number(formData.temperatura),
+        ph: Number(formData.ph),
+        texto_voz: formData.observaciones,
+      };
+
+      await apiFetch(API.mediciones.create(), { method: "POST", body: payload });
+
+      toast("Medición guardada", { description: "Tus datos se han registrado correctamente." });
+
+      // Navegamos a Comparativas con datos suficientes para buscar perfil
+      const params = new URLSearchParams({
+        loteId: String(formData.lote),
+        variedad: selectedLote?.variedad || "",
+        proceso: selectedLote?.proceso || "",
+        fase: mapFaseToBackend(formData.fase),
+        ph: formData.ph || "0",
+        temp: formData.temperatura || "0",
+      });
+      navigate(`/comparativas?${params.toString()}`);
+    } catch (error: any) {
+      toast("Error al guardar medición", { description: error.message || "No se pudo guardar la medición" });
+    }
   };
 
   return (
@@ -46,12 +96,14 @@ const Mediciones = () => {
               <Label className="text-lg">Selecciona el Lote</Label>
               <Select value={formData.lote} onValueChange={(value) => setFormData({...formData, lote: value})}>
                 <SelectTrigger className="h-12 text-base">
-                  <SelectValue placeholder="Elige un lote" />
+                  <SelectValue placeholder={loadingLotes ? "Cargando lotes..." : "Elige un lote"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Castillo - Tanque 1">Castillo - Tanque 1</SelectItem>
-                  <SelectItem value="Caturra - Tanque 2">Caturra - Tanque 2</SelectItem>
-                  <SelectItem value="Bourbon - Tanque 3">Bourbon - Tanque 3</SelectItem>
+                  {lotes.map((l: any) => (
+                    <SelectItem key={l._id || l.id} value={String(l._id || l.id)}>
+                      {`${l.variedad} - ${l.proceso}`}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

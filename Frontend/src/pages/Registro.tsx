@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/components/ui/sonner";
+import { register } from "@/api/auth";
 
 const Registro = () => {
   const [formData, setFormData] = useState({
@@ -17,11 +19,28 @@ const Registro = () => {
     password: "",
     regimen: "",
   });
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/home");
+    setLoading(true);
+    
+    try {
+      await register({
+        name: formData.nombre,
+        email: formData.email,
+        password: formData.password
+      });
+      toast("Registro exitoso", { description: "Tu cuenta ha sido creada correctamente" });
+      navigate("/");
+    } catch (error: any) {
+      toast("Error en el registro", { 
+        description: error.message || "No se pudo crear la cuenta" 
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -120,8 +139,12 @@ const Registro = () => {
             </Select>
           </div>
 
-          <Button type="submit" className="w-full text-base py-6">
-            Crear Cuenta
+          <Button 
+            type="submit" 
+            disabled={loading}
+            className="w-full text-base py-6"
+          >
+            {loading ? "Creando cuenta..." : "Crear Cuenta"}
           </Button>
         </form>
 

@@ -7,58 +7,89 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Link } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
-
-const storageKey = "lotes";
+import { apiFetch } from "@/api/http";
+import { API } from "@/api/endpoints";
 
 const Lotes = () => {
-  const [lotes, setLotes] = useState([
-    { id: 1, tanque: "Tanque 1", variedad: "Caturra", proceso: "Lavado", fecha: "2024-10-01", cantidad: 500, estado: "En fermentación" },
-    { id: 2, tanque: "Tanque 2", variedad: "Bourbon", proceso: "Honey", fecha: "2024-10-05", cantidad: 300, estado: "En reposo" },
-  ]);
-
-  const [newLote, setNewLote] = useState({ tanque: "", variedad: "", proceso: "", fecha: "", cantidad: "", estado: "" });
+  const [lotes, setLotes] = useState<any[]>([]);
+  const [tanques, setTanques] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newLote, setNewLote] = useState({
+    tanque_id: "",
+    variedad: "",
+    proceso: "Lavado",
+    fecha_inicio: "",
+    horas_estimadas: "",
+    cantidad_kg: "",
+    estado: "En fermentación",
+    premium_porcentaje: "",
+  });
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        setLotes(JSON.parse(saved));
-      } else {
-        localStorage.setItem(storageKey, JSON.stringify(lotes));
-      }
-    } catch {}
+    loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleAdd = () => {
-    const nextId = (lotes.reduce((m, l) => Math.max(m, l.id), 0) || 0) + 1;
-    const nuevo = {
-      id: nextId,
-      tanque: newLote.tanque || `Tanque ${nextId}`,
-      variedad: newLote.variedad || "Sin variedad",
-      proceso: newLote.proceso || "Sin proceso",
-      fecha: newLote.fecha || new Date().toISOString().slice(0, 10),
-      cantidad: Number(newLote.cantidad) || 0,
-      estado: newLote.estado || "Pendiente",
-    };
-    const next = [...lotes, nuevo];
-    setLotes(next);
-    localStorage.setItem(storageKey, JSON.stringify(next));
-    toast("Lote creado", { description: `Lote en ${nuevo.tanque} fue agregado.` });
-    setNewLote({ tanque: "", variedad: "", proceso: "", fecha: "", cantidad: "", estado: "" });
-    setOpen(false);
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [lotesResp, tanquesResp] = await Promise.all([
+        apiFetch(API.lotes.list()),
+        apiFetch(API.tanques.list()),
+      ]);
+      setLotes(lotesResp || []);
+      setTanques(tanquesResp || []);
+    } catch (error: any) {
+      toast("Error al cargar datos", { description: error.message || "No se pudieron cargar lotes/tanques" });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = (id: number) => {
-    const lote = lotes.find((l) => l.id === id);
-    if (!lote) return;
-    const ok = window.confirm(`¿Eliminar lote del ${lote.tanque}?`);
-    if (!ok) return;
-    const next = lotes.filter((l) => l.id !== id);
-    setLotes(next);
-    localStorage.setItem(storageKey, JSON.stringify(next));
-    toast("Lote eliminado", { description: `Lote de ${lote.tanque} fue eliminado.` });
+  const handleAdd = async () => {
+    try {
+      const payload = {
+        tanque_id: newLote.tanque_id,
+        variedad: newLote.variedad,
+        proceso: newLote.proceso,
+        fecha_inicio: newLote.fecha_inicio,
+        horas_estimadas: Number(newLote.horas_estimadas) || 0,
+        cantidad_kg: Number(newLote.cantidad_kg) || 0,
+        estado: newLote.estado,
+        premium_porcentaje: Number(newLote.premium_porcentaje) || 0,
+      };
+
+      await apiFetch(API.lotes.create(), { method: "POST", body: payload });
+      toast("Lote creado", { description: `Lote en tanque ${payload.tanque_id} agregado.` });
+
+      setNewLote({
+        tanque_id: "",
+        variedad: "",
+        proceso: "Lavado",
+        fecha_inicio: "",
+        horas_estimadas: "",
+        cantidad_kg: "",
+        estado: "En fermentación",
+        premium_porcentaje: "",
+      });
+      setOpen(false);
+      loadData();
+    } catch (error: any) {
+      toast("Error al crear lote", { description: error.message || "No se pudo crear el lote" });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const ok = window.confirm("¿Eliminar este lote?");
+      if (!ok) return;
+      await apiFetch(API.lotes.remove(id), { method: "DELETE" });
+      toast("Lote eliminado", { description: `Lote ${id} fue eliminado.` });
+      loadData();
+    } catch (error: any) {
+      toast("Error al eliminar lote", { description: error.message || "No se pudo eliminar el lote" });
+    }
   };
 
   return (
@@ -83,11 +114,18 @@ const Lotes = () => {
             <div className="space-y-4 pt-4">
               <div className="space-y-2">
                 <Label>Tanque</Label>
-                <Input
-                  placeholder="Ej: Tanque 1"
-                  value={newLote.tanque}
-                  onChange={(e) => setNewLote({ ...newLote, tanque: e.target.value })}
-                />
+                <select
+                  className="w-full border rounded-md p-2 bg-background"
+                  value={newLote.tanque_id}
+                  onChange={(e) => setNewLote({ ...newLote, tanque_id: e.target.value })}
+                >
+                  <option value="">Selecciona un tanque</option>
+                  {tanques.map((t: any) => (
+                    <option key={t._id} value={t._id}>
+                      {t.codigo_tanque} ({t.material}, {t.capacidad_kg} kg)
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-2">
                 <Label>Variedad</Label>
@@ -99,18 +137,31 @@ const Lotes = () => {
               </div>
               <div className="space-y-2">
                 <Label>Proceso</Label>
-                <Input
-                  placeholder="Ej: Lavado"
+                <select
+                  className="w-full border rounded-md p-2 bg-background"
                   value={newLote.proceso}
                   onChange={(e) => setNewLote({ ...newLote, proceso: e.target.value })}
+                >
+                  <option>Lavado</option>
+                  <option>Honey</option>
+                  <option>Natural</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>Fecha de inicio</Label>
+                <Input
+                  type="date"
+                  value={newLote.fecha_inicio}
+                  onChange={(e) => setNewLote({ ...newLote, fecha_inicio: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Fecha</Label>
+                <Label>Horas estimadas</Label>
                 <Input
-                  type="date"
-                  value={newLote.fecha}
-                  onChange={(e) => setNewLote({ ...newLote, fecha: e.target.value })}
+                  type="number"
+                  placeholder="Ej: 48"
+                  value={newLote.horas_estimadas}
+                  onChange={(e) => setNewLote({ ...newLote, horas_estimadas: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
@@ -118,16 +169,32 @@ const Lotes = () => {
                 <Input
                   type="number"
                   placeholder="Ej: 500"
-                  value={newLote.cantidad}
-                  onChange={(e) => setNewLote({ ...newLote, cantidad: e.target.value })}
+                  value={newLote.cantidad_kg}
+                  onChange={(e) => setNewLote({ ...newLote, cantidad_kg: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Estado</Label>
-                <Input
-                  placeholder="Ej: En fermentación"
+                <select
+                  className="w-full border rounded-md p-2 bg-background"
                   value={newLote.estado}
                   onChange={(e) => setNewLote({ ...newLote, estado: e.target.value })}
+                >
+                  <option>En fermentación</option>
+                  <option>Listo para lavado</option>
+                  <option>Lavado</option>
+                  <option>Secado</option>
+                  <option>Completado</option>
+                  <option>Descarte</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>Premium (%)</Label>
+                <Input
+                  type="number"
+                  placeholder="Ej: 10"
+                  value={newLote.premium_porcentaje}
+                  onChange={(e) => setNewLote({ ...newLote, premium_porcentaje: e.target.value })}
                 />
               </div>
               <Button onClick={handleAdd} className="w-full">Guardar Lote</Button>
@@ -136,41 +203,46 @@ const Lotes = () => {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {lotes.map((lote) => (
-          <Card key={lote.id} className="p-6 hover:shadow-xl transition-shadow">
-            <div className="space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="bg-primary/10 p-3 rounded-xl">
-                  <Package className="w-8 h-8 text-primary" />
+      {loading ? (
+        <div className="text-muted-foreground">Cargando lotes...</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {lotes.map((lote: any) => (
+            <Card key={lote._id || lote.id} className="p-6 hover:shadow-xl transition-shadow">
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="bg-primary/10 p-3 rounded-xl">
+                    <Package className="w-8 h-8 text-primary" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="icon" variant="ghost" asChild>
+                      <Link to={`/lotes/${lote._id || lote.id}/editar`} aria-label="Editar lote">
+                        <Edit className="w-4 h-4" />
+                      </Link>
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => handleDelete(lote._id || lote.id)}>
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button size="icon" variant="ghost" asChild>
-                    <Link to={`/lotes/${lote.id}/editar`} aria-label="Editar lote">
-                      <Edit className="w-4 h-4" />
-                    </Link>
-                  </Button>
-                  <Button size="icon" variant="ghost" onClick={() => handleDelete(lote.id)}>
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
-                </div>
-              </div>
 
-              <div>
-                <h3 className="text-xl font-bold text-foreground">{lote.variedad} - {lote.proceso}</h3>
-                <div className="flex items-center gap-2 text-muted-foreground mt-2">
-                  <Calendar className="w-4 h-4" />
-                  <span>{lote.fecha}</span>
+                <div>
+                  <h3 className="text-xl font-bold text-foreground">{lote.variedad} - {lote.proceso}</h3>
+                  <div className="flex items-center gap-2 text-muted-foreground mt-2">
+                    <Calendar className="w-4 h-4" />
+                    <span>{lote.fecha_inicio ? new Date(lote.fecha_inicio).toISOString().slice(0, 10) : lote.fecha}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Tanque: {lote.tanque_id?.codigo_tanque || lote.tanque || "N/D"}</p>
+                  <p className="text-sm text-muted-foreground">Horas estimadas: {lote.horas_estimadas ?? "N/D"} h</p>
+                  <p className="text-lg font-semibold text-primary mt-3">
+                    {(lote.cantidad_kg ?? lote.cantidad) + " kg"} - {lote.estado}
+                  </p>
                 </div>
-                <p className="text-sm text-muted-foreground">Tanque: {lote.tanque}</p>
-                <p className="text-lg font-semibold text-primary mt-3">
-                  {lote.cantidad} kg - {lote.estado}
-                </p>
               </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

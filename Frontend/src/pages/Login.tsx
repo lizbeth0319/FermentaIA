@@ -5,16 +5,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { toast } from "@/components/ui/sonner";
+import { login } from "@/api/auth";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock login (se mantiene para facilitar el diseño)
-    navigate("/home");
+    setLoading(true);
+    
+    try {
+      await login({ email, password });
+      toast("Inicio de sesión exitoso", { description: "Bienvenido a FermentaIA" });
+      navigate("/home");
+    } catch (error: any) {
+      toast("Error al iniciar sesión", { 
+        description: error.message || "Credenciales incorrectas" 
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -55,8 +69,12 @@ const Login = () => {
             />
           </div>
 
-          <Button type="submit" className="w-full h-11 text-base bg-primary text-primary-foreground hover:bg-primary/90">
-            Iniciar Sesión
+          <Button 
+            type="submit" 
+            disabled={loading}
+            className="w-full h-11 text-base bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
           </Button>
         </form>
 
