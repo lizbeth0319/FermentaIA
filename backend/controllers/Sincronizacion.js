@@ -84,58 +84,52 @@ export const getSincronizacionById = async (req, res) => {
 };
 // Crear nueva sincronización
 export const createSincronizacion = async (req, res) => {
-    try {
-        const {
-            lote_id,
-            medicion_id,
-            estado_sync,
-            fecha_sync
-        } = req.body;
+  try {
+    const { lote_id, medicion_id, estado_sync, fecha_sync } = req.body;
 
-        const nuevaSincronizacion = new Sincronizacion({
-            lote_id,
-            medicion_id,
-            estado_sync,
-            fecha_sync: fecha_sync || new Date()
-        });
+    const nuevaSincronizacion = new Sincronizacion({
+      lote_id,
+      medicion_id,
+      estado_sync,
+      fecha_sync: fecha_sync || new Date(),
+    });
 
-        const sincronizacionGuardada = await nuevaSincronizacion.save();
-        await sincronizacionGuardada.populate(['lote_id', 'medicion_id']);
+    const sincronizacionGuardada = await nuevaSincronizacion.save();
+    await sincronizacionGuardada.populate(["lote_id", "medicion_id"]);
 
-        // Preparar respuesta estructurada
-        const sincronizacionResponse = {
-            id: sincronizacionGuardada._id,
-            referencias: {
-                lote: {
-                    id: sincronizacionGuardada.lote_id._id,
-                    variedad: sincronizacionGuardada.lote_id.variedad
-                },
-                medicion: {
-                    id: sincronizacionGuardada.medicion_id._id,
-                    fecha: sincronizacionGuardada.medicion_id.createdAt
-                }
-            },
-            datos_sincronizacion: {
-                estado: sincronizacionGuardada.estado_sync,
-                fecha_sync: sincronizacionGuardada.fecha_sync,
-                creado: sincronizacionGuardada.createdAt
-            }
-        };
+    // Preparar respuesta estructurada
+    const sincronizacionResponse = {
+      id: sincronizacionGuardada._id,
+      referencias: {
+        lote: {
+          id: sincronizacionGuardada.lote_id._id,
+          variedad: sincronizacionGuardada.lote_id.variedad,
+        },
+        medicion: {
+          id: sincronizacionGuardada.medicion_id._id,
+          fecha: sincronizacionGuardada.medicion_id.createdAt,
+        },
+      },
+      datos_sincronizacion: {
+        estado: sincronizacionGuardada.estado_sync,
+        fecha_sync: sincronizacionGuardada.fecha_sync,
+        creado: sincronizacionGuardada.createdAt,
+      },
+    };
 
-        res.status(201).json({
-            success: true,
-            message: 'Sincronización creada exitosamente',
-            data: sincronizacionResponse
-        });
-
-    } catch (error) {
-        console.error('Error en createSincronizacion:', error);
-        res.status(400).json({
-            success: false,
-            message: 'Error al crear la sincronización',
-            error: error.message
-        });
-    }
+    res.status(201).json({
+      success: true,
+      message: "Sincronización creada exitosamente",
+      data: sincronizacionResponse,
+    });
+  } catch (error) {
+    console.error("Error en createSincronizacion:", error);
+    res.status(400).json({
+      success: false,
+      message: "Error al crear la sincronización",
+      error: error.message,
+    });
+  }
 };
 // Actualizar sincronización
 export const updateSincronizacion = async (req, res) => {

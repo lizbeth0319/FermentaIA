@@ -12,11 +12,13 @@ import perfilesRoutes from "./routers/PerfilIdeal.js";
 import authetication from "./routers/Autenticacion.js"
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
+import cors from "cors";
+
 dotenv.config();
 const app = express();
 
 app.use(express.json());
-
+app.use(cors());
 // Rutas
 app.use("/api/auth", authetication);
 app.use("/api/productores", productoresRoutes);
