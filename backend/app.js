@@ -10,7 +10,8 @@ import medicionesRoutes from "./routers/Medicion.js";
 import recomendacionesRoutes from "./routers/Recomendacion.js";
 import sincronizacionesRoutes from "./routers/Sincronizacion.js";
 import perfilesRoutes from "./routers/PerfilIdeal.js";
-import authetication from "./routers/Autenticacion.js"
+import authetication from "./routers/Autenticacion.js";
+import aiRoutes from "./routers/AI.js";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import cors from "cors";
@@ -19,15 +20,11 @@ dotenv.config();
 const app = express();
 
 app.use(express.json());
-<<<<<<< Updated upstream
-app.use(cors());
-=======
 app.use(cors({
   origin: ["http://localhost:8080", "http://localhost:8081"],
   credentials: true,
 }));
 
->>>>>>> Stashed changes
 // Rutas
 app.use("/api/auth", authetication);
 app.use("/api/productores", productoresRoutes);
@@ -38,6 +35,7 @@ app.use("/api/mediciones", medicionesRoutes);
 app.use("/api/recomendaciones", recomendacionesRoutes);
 app.use("/api/sincronizaciones", sincronizacionesRoutes);
 app.use("/api/perfiles", perfilesRoutes);
+app.use("/api/ai", aiRoutes);
 
 // Puerto
 const PORT = process.env.PORT || 3000;
