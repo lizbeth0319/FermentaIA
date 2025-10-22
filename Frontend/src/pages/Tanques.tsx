@@ -7,55 +7,77 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Link } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
-
-const storageKey = "tanques";
+import { apiFetch } from "@/api/http";
+import { API } from "@/api/endpoints";
 
 const Tanques = () => {
-  const [tanques, setTanques] = useState([
-    { id: 1, nombre: "Tanque 1", finca: "Finca El Paraíso", capacidad: 2000 },
-    { id: 2, nombre: "Tanque 2", finca: "Finca La Esperanza", capacidad: 1500 },
-  ]);
+  const [tanques, setTanques] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [fincas, setFincas] = useState([]);
 
-  const [newTanque, setNewTanque] = useState({ nombre: "", finca: "", capacidad: "" });
+  const [newTanque, setNewTanque] = useState({
+    finca_id: "",
+    codigo_tanque: "",
+    capacidad_kg: "",
+    material: ""
+  });
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        setTanques(JSON.parse(saved));
-      } else {
-        localStorage.setItem(storageKey, JSON.stringify(tanques));
-      }
-    } catch {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadData();
   }, []);
 
-  const handleAdd = () => {
-    const nextId = (tanques.reduce((m, t) => Math.max(m, t.id), 0) || 0) + 1;
-    const nuevo = {
-      id: nextId,
-      nombre: newTanque.nombre || `Tanque ${nextId}`,
-      finca: newTanque.finca || "Sin finca",
-      capacidad: Number(newTanque.capacidad) || 0,
-    };
-    const next = [...tanques, nuevo];
-    setTanques(next);
-    localStorage.setItem(storageKey, JSON.stringify(next));
-    toast("Tanque creado", { description: `${nuevo.nombre} fue agregado.` });
-    setNewTanque({ nombre: "", finca: "", capacidad: "" });
-    setOpen(false);
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      // Cargar tanques y fincas en paralelo
+      const [tanquesData, fincasData] = await Promise.all([
+        apiFetch(API.tanques.list()),
+        apiFetch(API.fincas.list())
+      ]);
+      setTanques(tanquesData || []);
+      setFincas(fincasData || []);
+    } catch (error: any) {
+      toast("Error al cargar datos", { 
+        description: error.message || "No se pudieron cargar los datos" 
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = (id: number) => {
-    const tanque = tanques.find((t) => t.id === id);
+  const handleAdd = async () => {
+    try {
+      const payload = {
+        finca_id: newTanque.finca_id,
+        codigo_tanque: newTanque.codigo_tanque,
+        capacidad_kg: Number(newTanque.capacidad_kg) || 0,
+        material: newTanque.material,
+      };
+
+      await apiFetch(API.tanques.create(), { method: "POST", body: payload });
+      toast("Tanque creado", { description: `Código ${payload.codigo_tanque} agregado.` });
+
+      setNewTanque({ finca_id: "", codigo_tanque: "", capacidad_kg: "", material: "" });
+      setOpen(false);
+      loadData(); // recargar lista
+    } catch (error: any) {
+      toast("Error al crear tanque", { description: error.message || "No se pudo crear el tanque" });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const tanque = tanques.find((t: any) => t._id === id);
     if (!tanque) return;
-    const ok = window.confirm(`¿Eliminar "${tanque.nombre}"?`);
+    const ok = window.confirm(`¿Eliminar "${tanque.codigo_tanque}"?`);
     if (!ok) return;
-    const next = tanques.filter((t) => t.id !== id);
-    setTanques(next);
-    localStorage.setItem(storageKey, JSON.stringify(next));
-    toast("Tanque eliminado", { description: `${tanque.nombre} fue eliminado.` });
+    try {
+      await apiFetch(API.tanques.remove(id), { method: "DELETE" });
+      toast("Tanque eliminado", { description: `Código ${tanque.codigo_tanque} eliminado.` });
+      loadData();
+    } catch (error: any) {
+      toast("Error al eliminar tanque", { description: error.message || "No se pudo eliminar el tanque" });
+    }
   };
 
   return (
@@ -79,28 +101,41 @@ const Tanques = () => {
             </DialogHeader>
             <div className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label>Nombre del Tanque</Label>
+                <Label>Código del Tanque</Label>
                 <Input
-                  placeholder="Ej: Tanque 1"
-                  value={newTanque.nombre}
-                  onChange={(e) => setNewTanque({ ...newTanque, nombre: e.target.value })}
+                  placeholder="Ej: TQ-001"
+                  value={newTanque.codigo_tanque}
+                  onChange={(e) => setNewTanque({ ...newTanque, codigo_tanque: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Finca</Label>
-                <Input
-                  placeholder="Ej: Finca El Paraíso"
-                  value={newTanque.finca}
-                  onChange={(e) => setNewTanque({ ...newTanque, finca: e.target.value })}
-                />
+                <select
+                  className="w-full border rounded-md px-3 py-2 bg-background"
+                  value={newTanque.finca_id}
+                  onChange={(e) => setNewTanque({ ...newTanque, finca_id: e.target.value })}
+                >
+                  <option value="">Seleccione una finca</option>
+                  {fincas.map((finca: any) => (
+                    <option key={finca._id} value={finca._id}>{finca.nombre_finca}</option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-2">
-                <Label>Capacidad (litros)</Label>
+                <Label>Capacidad (kg)</Label>
                 <Input
                   type="number"
                   placeholder="Ej: 2000"
-                  value={newTanque.capacidad}
-                  onChange={(e) => setNewTanque({ ...newTanque, capacidad: e.target.value })}
+                  value={newTanque.capacidad_kg}
+                  onChange={(e) => setNewTanque({ ...newTanque, capacidad_kg: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Material</Label>
+                <Input
+                  placeholder="Ej: Acero inoxidable"
+                  value={newTanque.material}
+                  onChange={(e) => setNewTanque({ ...newTanque, material: e.target.value })}
                 />
               </div>
               <Button onClick={handleAdd} className="w-full">Guardar Tanque</Button>
@@ -109,42 +144,55 @@ const Tanques = () => {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tanques.map((tanque) => (
-          <Card key={tanque.id} className="p-6 hover:shadow-xl transition-shadow">
-            <div className="space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="bg-primary/10 p-3 rounded-xl">
-                  <Wine className="w-8 h-8 text-primary" />
-                </div>
-                <div className="flex gap-2">
-                  <Button size="icon" variant="ghost" asChild>
-                    <Link to={`/tanques/${tanque.id}/editar`} aria-label="Editar tanque">
-                      <Edit className="w-4 h-4" />
-                    </Link>
-                  </Button>
-                  <Button size="icon" variant="ghost" onClick={() => handleDelete(tanque.id)}>
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
-                </div>
-              </div>
+      {loading ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Cargando tanques...</p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {tanques.map((tanque: any) => {
+            const finca = fincas.find((f: any) => f._id === tanque.finca_id);
+            return (
+              <Card key={tanque._id} className="p-6 hover:shadow-xl transition-shadow">
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="bg-primary/10 p-3 rounded-xl">
+                      <Wine className="w-8 h-8 text-primary" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="icon" variant="ghost" asChild>
+                        <Link to={`/tanques/${tanque._id}/editar`} aria-label="Editar tanque">
+                          <Edit className="w-4 h-4" />
+                        </Link>
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => handleDelete(tanque._id)}>
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
 
-              <div>
-                <h3 className="text-xl font-bold text-foreground">{tanque.nombre}</h3>
-                <div className="flex items-center gap-2 text-muted-foreground mt-2">
-                  <Droplets className="w-4 h-4" />
-                  <span>{tanque.finca}</span>
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground">{tanque.codigo_tanque}</h3>
+                    <div className="flex items-center gap-2 text-muted-foreground mt-2">
+                      <Droplets className="w-4 h-4" />
+                      <span>{finca ? finca.nombre_finca : tanque.finca_id}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">Material: {tanque.material}</p>
+                    <p className="text-lg font-semibold text-primary mt-3">
+                      Capacidad: {tanque.capacidad_kg} kg
+                    </p>
+                  </div>
                 </div>
-                <p className="text-lg font-semibold text-primary mt-3">
-                  {tanque.capacidad} litros
-                </p>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
+              </Card>
+            );
+          })}
+        </div>
+       )}
+     </div>
+   );
 };
 
 export default Tanques;

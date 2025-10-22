@@ -24,7 +24,10 @@ export async function apiFetch<T = any>(path: string, opts: ApiOptions = {}): Pr
 
   // Adjunta token si existe
   const token = authToken.get();
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+    headers["x-token"] = token; // Backend espera este header
+  }
 
   const resp = await fetch(url, {
     method: opts.method || (opts.body ? "POST" : "GET"),
