@@ -1,0 +1,855 @@
+de acuerdo a este estilo de IA por así decirlo, ayudame a modificar el chat de ia que esta acá en este proyecto
+es que no me gusta el estilo, solo usemos el mismo estilo del que te voy a mandar, con sus animaciones y eso 
+yo ya te doy la ruta de la imagen que vamos a usar 
+
+
+import React, { useState, useEffect } from 'react'
+import { X, Zap, Brain, PhoneCall, AlertTriangle, MessageCircle } from 'lucide-react'
+import '../styles/FloatingAIWidget.css'
+
+// Componente para efecto de escritura animada
+const TypewriterText = ({ text, speed = 50, onComplete }) => {
+  const [displayedText, setDisplayedText] = useState('')
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  useEffect(() => {
+    if (currentIndex < text.length) {
+      const timer = setTimeout(() => {
+        setDisplayedText(prev => prev + text[currentIndex])
+        setCurrentIndex(prev => prev + 1)
+      }, speed)
+      return () => clearTimeout(timer)
+    } else if (onComplete) {
+      onComplete()
+    }
+  }, [currentIndex, text, speed, onComplete])
+
+  useEffect(() => {
+    setDisplayedText('')
+    setCurrentIndex(0)
+  }, [text])
+
+  return (
+    <span className="typewriter-text">
+      {displayedText.split('\n').map((line, index) => (
+        <div key={index}>{line}</div>
+      ))}
+    </span>
+  )
+}
+
+const FloatingAIWidget = ({ isOpen, setIsOpen }) => {
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      type: "ai",
+      content: "¡Hola! Soy BeaconBot, tu asistente de seguridad con IA. ¿En qué puedo ayudarte hoy?",
+    },
+  ])
+  const [inputMessage, setInputMessage] = useState("")
+  const [isTyping, setIsTyping] = useState(false)
+
+  const generateAIResponse = (userInput) => {
+    const input = userInput.toLowerCase()
+    
+    // Respuestas contextuales basadas en palabras clave
+    if (input.includes('emergencia') || input.includes('ayuda') || input.includes('socorro')) {
+      return "🚨 Detecté una situación de emergencia. He activado el protocolo de respuesta rápida. ¿Necesitas que contacte servicios de emergencia o prefieres reportar el incidente primero?"
+    }
+    
+    if (input.includes('ubicación') || input.includes('localización') || input.includes('donde')) {
+      return "📍 Puedo ayudarte con información de ubicación. Tengo acceso a mapas interactivos y puntos de seguridad cercanos. ¿Necesitas localizar algún lugar específico o reportar tu ubicación actual?"
+    }
+    
+    if (input.includes('contacto') || input.includes('persona') || input.includes('familiar')) {
+      return "👥 Te ayudo con la gestión de contactos de emergencia. Puedo ayudarte a configurar contactos de confianza, enviar alertas automáticas o buscar personas en tu red de seguridad."
+    }
+    
+    if (input.includes('reporte') || input.includes('incidente') || input.includes('problema')) {
+      return "📋 Iniciando protocolo de reporte de incidentes. Puedo ayudarte a documentar el evento, clasificar el nivel de riesgo y enviar notificaciones a las autoridades correspondientes. ¿Qué tipo de incidente necesitas reportar?"
+    }
+    
+    if (input.includes('seguridad') || input.includes('protección') || input.includes('riesgo')) {
+      return "🛡️ Analizando tu consulta de seguridad... He identificado varios protocolos aplicables. Puedo realizar un análisis de riesgo personalizado y sugerir medidas preventivas. ¿Te encuentras en una situación de riesgo actualmente?"
+    }
+    
+    if (input.includes('configuración') || input.includes('ajustes') || input.includes('settings')) {
+      return "⚙️ Te ayudo con la configuración del sistema. Puedo ajustar notificaciones, configurar contactos de emergencia, personalizar alertas y optimizar tu perfil de seguridad. ¿Qué aspecto quieres configurar?"
+    }
+    
+    if (input.includes('recursos') || input.includes('información') || input.includes('guía')) {
+      return "📚 Tengo acceso a una amplia base de datos de recursos de seguridad. Puedo proporcionarte guías de autoprotección, números de emergencia, protocolos de evacuación y consejos de seguridad personalizados."
+    }
+    
+    if (input.includes('hola') || input.includes('hi') || input.includes('buenos') || input.includes('buenas')) {
+      return "¡Hola! 👋 Es un placer ayudarte. Soy tu asistente de seguridad con IA avanzada. Estoy aquí para protegerte y asistirte en cualquier situación. ¿En qué puedo ayudarte hoy?"
+    }
+    
+    // Respuestas para palabras simples y confirmaciones
+    if (input === 'sí' || input === 'si' || input === 'yes' || input === 'ok' || input === 'vale') {
+      return "✅ Perfecto. Procedo con la acción solicitada. ¿Hay algo más en lo que pueda asistirte para garantizar tu seguridad?"
+    }
+    
+    if (input === 'no' || input === 'nope' || input === 'negativo') {
+      return "❌ Entendido. No hay problema. Si cambias de opinión o necesitas cualquier tipo de asistencia de seguridad, estaré aquí para ayudarte. ¿Hay algo más que pueda hacer por ti?"
+    }
+    
+    if (input.includes('gracias') || input.includes('thanks') || input.includes('thank you')) {
+      return "😊 ¡De nada! Es un placer ayudarte. Recuerda que estoy disponible 24/7 para cualquier consulta de seguridad o emergencia. ¡Mantente seguro!"
+    }
+    
+    if (input.includes('perfecto') || input.includes('excelente') || input.includes('genial') || input.includes('bien')) {
+      return "🎉 ¡Me alegra saber que todo está funcionando correctamente! Si necesitas más asistencia o tienes alguna consulta de seguridad, no dudes en contactarme."
+    }
+    
+    if (input.includes('adiós') || input.includes('bye') || input.includes('hasta luego') || input.includes('chao')) {
+      return "👋 ¡Hasta luego! Recuerda que siempre estaré aquí cuando me necesites. Mantente seguro y no dudes en contactarme ante cualquier situación. ¡Cuídate!"
+    }
+    
+    // Respuesta por defecto inteligente
+    const defaultResponses = [
+      "🤖 Procesando tu consulta... He analizado tu mensaje y puedo ofrecerte varias opciones de asistencia. ¿Necesitas ayuda con seguridad, reportes, contactos o información de ubicación?",
+      "💡 Entiendo tu consulta. Como tu asistente de IA especializado en seguridad, puedo ayudarte con análisis de riesgo, gestión de emergencias y protocolos de seguridad. ¿Podrías ser más específico?",
+      "🔍 He procesado tu mensaje y detecté que podrías necesitar asistencia especializada. Tengo capacidades avanzadas en seguridad personal, gestión de crisis y coordinación de emergencias. ¿Cómo puedo ayudarte mejor?"
+    ]
+    
+    return defaultResponses[Math.floor(Math.random() * defaultResponses.length)]
+  }
+
+  const handleSendMessage = () => {
+    if (!inputMessage.trim()) return
+
+    const newUserMessage = {
+      id: messages.length + 1,
+      type: "user",
+      content: inputMessage,
+    }
+
+    setMessages((prev) => [...prev, newUserMessage])
+    setIsTyping(true)
+    
+    const currentInput = inputMessage
+    setInputMessage("")
+
+    // Simular tiempo de procesamiento de IA
+    setTimeout(() => {
+      const aiResponse = {
+        id: messages.length + 2,
+        type: "ai",
+        content: generateAIResponse(currentInput),
+      }
+      setMessages((prev) => [...prev, aiResponse])
+      setIsTyping(false)
+    }, Math.random() * 1500 + 800) // Entre 800ms y 2.3s para simular procesamiento real
+  }
+
+  const handleQuickAction = (actionType) => {
+    const actionResponses = {
+      'risk-analysis': {
+        user: "Realizar análisis de riesgo",
+        ai: "🔍 Iniciando análisis de riesgo avanzado...\n\n📊 **Evaluación completada:**\n• Nivel de riesgo actual: BAJO-MEDIO\n• Factores detectados: Ubicación segura, horario diurno\n• Recomendaciones: Mantener contactos actualizados\n• Próxima evaluación: En 2 horas\n\n¿Necesitas un análisis más detallado de algún aspecto específico?"
+      },
+      'ai-tips': {
+        user: "Solicitar consejos de IA",
+        ai: "🧠 **Consejos de Seguridad Personalizados:**\n\n🛡️ **Prevención:**\n• Mantén siempre informados a tus contactos de confianza\n• Evita rutas poco iluminadas durante la noche\n• Confía en tu instinto si algo no se siente bien\n\n📱 **Tecnología:**\n• Activa la ubicación en tiempo real\n• Configura alertas automáticas\n• Mantén la batería siempre cargada\n\n¿Te gustaría consejos específicos para alguna situación?"
+      },
+      'emergency-call': {
+        user: "Activar llamada de emergencia",
+        ai: "🚨 **PROTOCOLO DE EMERGENCIA ACTIVADO**\n\n📞 Preparando conexión con servicios de emergencia...\n📍 Ubicación detectada y compartida\n👥 Notificando a contactos de emergencia\n⏰ Tiempo de respuesta estimado: 3-5 minutos\n\n**Instrucciones:**\n• Mantén la calma\n• Permanece en línea\n• Sigue las indicaciones del operador\n\n¿Confirmas que necesitas asistencia inmediata?"
+      },
+      'report-incident': {
+        user: "Reportar incidente",
+        ai: "📋 **FORMULARIO DE REPORTE ACTIVADO**\n\n🔍 **Información requerida:**\n• Tipo de incidente: [Especificar]\n• Ubicación exacta: [Detectada automáticamente]\n• Hora del evento: [Registrada]\n• Personas involucradas: [Opcional]\n• Nivel de urgencia: [A evaluar]\n\n📸 Puedes adjuntar evidencia fotográfica\n🎙️ Grabación de audio disponible\n\n¿Qué tipo de incidente necesitas reportar?"
+      }
+    }
+
+    const response = actionResponses[actionType]
+    if (response) {
+      const userMessage = {
+        id: messages.length + 1,
+        type: "user",
+        content: response.user,
+      }
+      
+      setMessages((prev) => [...prev, userMessage])
+      setIsTyping(true)
+      
+      setTimeout(() => {
+        const aiMessage = {
+          id: messages.length + 2,
+          type: "ai",
+          content: response.ai,
+        }
+        setMessages((prev) => [...prev, aiMessage])
+        setIsTyping(false)
+      }, Math.random() * 1000 + 1200)
+    }
+  }
+
+  const quickActions = [
+    { icon: Zap, label: "Análisis de Riesgo", action: () => handleQuickAction('risk-analysis') },
+    { icon: Brain, label: "Consejos IA", action: () => handleQuickAction('ai-tips') },
+    { icon: PhoneCall, label: "Llamada de Emergencia", action: () => handleQuickAction('emergency-call') },
+    { icon: AlertTriangle, label: "Reportar Incidente", action: () => handleQuickAction('report-incident') },
+  ]
+
+  return (
+    <>
+      {/* AI Widget Button */}
+      <div className="ai-widget-button">
+        <button className="ai-btn" onClick={() => setIsOpen(!isOpen)}>
+          <div className="ai-btn-content">
+            <div className="ai-robot-container">
+              <img
+                src="/images/ai-robot.png"
+                alt="BeaconBot AI Assistant"
+                className="ai-robot-img"
+              />
+            </div>
+            <div className="ai-status-indicator">
+              <div className="ai-status-dot"></div>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      {/* AI Chat Widget */}
+      {isOpen && (
+        <div className="ai-chat-widget">
+          <div className="ai-chat-container">
+            {/* Header */}
+            <div className="ai-chat-header">
+              <div className="ai-chat-header-content">
+                <div className="ai-header-avatar">
+                  <img
+                    src="/images/ai-robot.png"
+                    alt="BeaconBot AI Assistant"
+                    className="ai-header-img"
+                  />
+                </div>
+                <div className="ai-header-info">
+                  <h3 className="ai-header-title">BeaconBot</h3>
+                  <p className="ai-header-subtitle">Asistente IA de Seguridad</p>
+                </div>
+              </div>
+              <button className="ai-close-btn" onClick={() => setIsOpen(false)}>
+                <X className="ai-close-icon" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="ai-chat-content">
+              {/* Chat Messages */}
+              <div className="ai-messages">
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`ai-message ${message.type === "user" ? 'ai-message-user' : 'ai-message-ai'}`}
+                  >
+                    <div className="ai-message-bubble">
+                      {message.type === 'ai' ? (
+                        <TypewriterText text={message.content} speed={30} />
+                      ) : (
+                        message.content.split('\n').map((line, index) => (
+                          <div key={index}>{line}</div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {isTyping && (
+                  <div className="ai-message ai-message-ai">
+                    <div className="ai-message-bubble ai-typing">
+                      <span className="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </span>
+                      BeaconBot está escribiendo...
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Quick Actions */}
+              <div className="ai-quick-actions">
+                {quickActions.map((action, index) => (
+                  <button
+                    key={index}
+                    className="ai-quick-action"
+                    onClick={action.action}
+                  >
+                    <action.icon className="ai-action-icon" />
+                    <span className="ai-action-label">{action.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Message Input */}
+              <div className="ai-input-container">
+                <input
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                  placeholder="Escribe tu consulta..."
+                  className="ai-input"
+                />
+                <button className="ai-send-btn" onClick={handleSendMessage}>
+                  <MessageCircle className="ai-send-icon" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+export default FloatingAIWidget
+
+
+su css pero aqui seria en tailwind
+.ai-widget-button {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+}
+
+.ai-btn {
+  height: 80px;
+  width: 80px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  padding: 8px;
+  border: 2px solid rgba(59, 130, 246, 0.2);
+  cursor: pointer;
+}
+
+.ai-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.ai-btn-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-robot-container {
+  width: 64px;
+  height: 64px;
+  position: relative;
+}
+
+.ai-robot-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  animation: robot-float 4s ease-in-out infinite;
+  transition: all 0.3s ease;
+}
+
+/* Animación principal del robot - flotación más dinámica */
+@keyframes robot-float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+    filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.25)) brightness(1.08);
+  }
+  20% {
+    transform: translateY(-4px) rotate(2deg) scale(1.05);
+    filter: drop-shadow(0 6px 12px rgba(59, 130, 246, 0.35)) brightness(1.12);
+  }
+  40% {
+    transform: translateY(-7px) rotate(-1deg) scale(1.08);
+    filter: drop-shadow(0 8px 16px rgba(59, 130, 246, 0.4)) brightness(1.15);
+  }
+  60% {
+    transform: translateY(-5px) rotate(3deg) scale(1.06);
+    filter: drop-shadow(0 7px 14px rgba(59, 130, 246, 0.38)) brightness(1.13);
+  }
+  80% {
+    transform: translateY(-2px) rotate(-2deg) scale(1.03);
+    filter: drop-shadow(0 5px 10px rgba(59, 130, 246, 0.3)) brightness(1.1);
+  }
+}
+
+/* Animación al hacer hover en el botón */
+.ai-btn:hover .ai-robot-img {
+  animation: robot-excited 2s ease-in-out infinite;
+}
+
+@keyframes robot-excited {
+  0%, 100% {
+    transform: translateY(-2px) rotate(0deg) scale(1.05);
+    filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.4)) brightness(1.15);
+  }
+  20% {
+    transform: translateY(-6px) rotate(3deg) scale(1.08);
+    filter: drop-shadow(0 8px 16px rgba(59, 130, 246, 0.5)) brightness(1.2);
+  }
+  40% {
+    transform: translateY(-4px) rotate(-2deg) scale(1.06);
+    filter: drop-shadow(0 6px 12px rgba(59, 130, 246, 0.45)) brightness(1.18);
+  }
+  60% {
+    transform: translateY(-7px) rotate(2deg) scale(1.07);
+    filter: drop-shadow(0 8px 16px rgba(59, 130, 246, 0.5)) brightness(1.2);
+  }
+  80% {
+    transform: translateY(-3px) rotate(-1deg) scale(1.05);
+    filter: drop-shadow(0 5px 10px rgba(59, 130, 246, 0.4)) brightness(1.15);
+  }
+}
+
+.ai-status-indicator {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+  border: 2px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-status-dot {
+  width: 8px;
+  height: 8px;
+  background: #059669;
+  border-radius: 50%;
+}
+
+.ai-chat-widget {
+  position: fixed;
+  bottom: 112px;
+  right: 24px;
+  width: 320px;
+  max-width: calc(100vw - 48px);
+  z-index: 50;
+}
+
+.ai-chat-container {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+}
+
+.ai-chat-header {
+  padding: 16px;
+  padding-bottom: 12px;
+}
+
+.ai-chat-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ai-header-avatar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ai-header-avatar {
+  width: 48px;
+  height: 48px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-header-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  animation: header-robot-pulse 3s ease-in-out infinite;
+  transition: all 0.3s ease;
+}
+
+/* Animación más visible para el robot del header */
+@keyframes header-robot-pulse {
+  0%, 100% {
+    transform: scale(1) rotate(0deg) translateY(0px);
+    filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.2)) brightness(1.05);
+  }
+  25% {
+    transform: scale(1.08) rotate(2deg) translateY(-2px);
+    filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.3)) brightness(1.15);
+  }
+  50% {
+    transform: scale(1.1) rotate(0deg) translateY(-3px);
+    filter: drop-shadow(0 6px 12px rgba(59, 130, 246, 0.4)) brightness(1.2);
+  }
+  75% {
+    transform: scale(1.08) rotate(-2deg) translateY(-2px);
+    filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.3)) brightness(1.15);
+  }
+}
+
+/* Animación al hacer hover en el header */
+.ai-chat-header:hover .ai-header-img {
+  animation: header-robot-excited 1.5s ease-in-out infinite;
+}
+
+@keyframes header-robot-excited {
+  0%, 100% {
+    transform: scale(1.02) rotate(0deg);
+    filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.3)) brightness(1.15);
+  }
+  25% {
+    transform: scale(1.08) rotate(2deg);
+    filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.4)) brightness(1.2);
+  }
+  75% {
+    transform: scale(1.06) rotate(-1deg);
+    filter: drop-shadow(0 3px 6px rgba(59, 130, 246, 0.35)) brightness(1.18);
+  }
+}
+
+.ai-header-info {
+  margin-left: 12px;
+}
+
+.ai-header-title {
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+  font-size: 16px;
+}
+
+.ai-header-subtitle {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+}
+
+.ai-close-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.ai-close-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.ai-close-icon {
+  height: 16px;
+  width: 16px;
+}
+
+.ai-chat-content {
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ai-messages {
+  max-height: 192px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ai-message {
+  display: flex;
+}
+
+.ai-message-user {
+  justify-content: flex-end;
+}
+
+.ai-message-ai {
+  justify-content: flex-start;
+}
+
+.ai-message-bubble {
+  max-width: 240px;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.ai-message-user .ai-message-bubble {
+  background: #3b82f6;
+  color: white;
+}
+
+.ai-message-ai .ai-message-bubble {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* Indicador de escritura */
+.ai-typing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.typing-indicator {
+  display: flex;
+  gap: 3px;
+}
+
+.typing-indicator span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3b82f6;
+  animation: typing-bounce 1.4s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes typing-bounce {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* Estilos para el efecto de escritura animada */
+.typewriter-text {
+  display: inline-block;
+  animation: typewriter-fade-in 0.3s ease-in;
+}
+
+@keyframes typewriter-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Animación sutil para cada carácter que aparece */
+.typewriter-text div {
+  animation: character-appear 0.1s ease-out;
+}
+
+@keyframes character-appear {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ai-quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.ai-quick-action {
+  height: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ai-quick-action:hover {
+  background: #f8fafc;
+  border-color: #3b82f6;
+}
+
+.ai-action-icon {
+  height: 16px;
+  width: 16px;
+  transition: all 0.3s ease;
+  animation: icon-gentle-pulse 3s ease-in-out infinite;
+}
+
+.ai-quick-action:hover .ai-action-icon {
+  transform: scale(1.1) rotate(5deg);
+  filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.3));
+  animation: icon-hover-glow 0.6s ease-in-out;
+}
+
+/* Animación sutil de pulso para los iconos */
+@keyframes icon-gentle-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+}
+
+/* Animación de hover más dinámica */
+@keyframes icon-hover-glow {
+  0% {
+    filter: drop-shadow(0 0 0 rgba(59, 130, 246, 0));
+  }
+  50% {
+    filter: drop-shadow(0 2px 8px rgba(59, 130, 246, 0.4));
+  }
+  100% {
+    filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.3));
+  }
+}
+
+.ai-action-label {
+  text-align: center;
+  line-height: 1.2;
+}
+
+.ai-input-container {
+  display: flex;
+  gap: 8px;
+}
+
+.ai-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.ai-input:focus {
+  border-color: #3b82f6;
+}
+
+.ai-send-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.ai-send-btn:hover {
+  background: #2563eb;
+}
+
+.ai-send-icon {
+  height: 16px;
+  width: 16px;
+}
+
+/* Estilos para modo oscuro del chat AI */
+[data-theme="dark"] .ai-chat-container {
+  background: rgba(45, 55, 72, 0.95);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .ai-header-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .ai-header-subtitle {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .ai-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .ai-close-icon {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .ai-message-ai .ai-message-bubble {
+  background: var(--card-bg);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .ai-quick-action {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .ai-quick-action:hover {
+  background: var(--hover-bg);
+  border-color: #3b82f6;
+}
+
+[data-theme="dark"] .ai-action-icon {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .ai-action-label {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .ai-input {
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .ai-input::placeholder {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .ai-input:focus {
+  border-color: #3b82f6;
+}
+
+[data-theme="dark"] .ai-status-indicator {
+  border: 2px solid var(--bg-primary);
+}
+
+
+es que no quiero esa vista del chat a parte toda fea, me parece horrible
+quiero este mismo diseño, igualito, ruta de la imagen 
+C:\Users\Aprendiz\Documents\GitHub\FermentaIA\Frontend\src\assets\bot.png

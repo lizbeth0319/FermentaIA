@@ -1,0 +1,62 @@
+Endpoints de la API – FermentaIA
+
+-Autenticación
+POST /api/auth/register – Registrar nuevo usuario
+POST /api/auth/login – Iniciar sesión
+-Productores
+GET /api/productores – Listar todos los productores
+GET /api/productores/:id – Obtener productor por ID
+POST /api/productores – Crear nuevo productor
+PUT /api/productores/:id – Actualizar productor
+DELETE /api/productores/:id – Eliminar productor
+-Fincas
+GET /api/fincas – Listar todas las fincas
+GET /api/fincas/:id – Obtener finca por ID
+GET /api/fincas/productor/:productorId – Fincas de un productor
+POST /api/fincas – Crear nueva finca
+PUT /api/fincas/:id – Actualizar finca
+DELETE /api/fincas/:id – Eliminar finca
+-Tanques
+GET /api/tanques – Listar tanques
+GET /api/tanques/:id – Obtener tanque por ID
+GET /api/tanques/finca/:fincaId – Tanques de una finca
+POST /api/tanques – Crear tanque
+PUT /api/tanques/:id – Actualizar tanque
+DELETE /api/tanques/:id – Eliminar tanque
+-Lotes
+GET /api/lotes – Listar lotes
+GET /api/lotes/:id – Obtener lote por ID
+GET /api/lotes/tanque/:tanqueId – Lotes por tanque
+POST /api/lotes – Crear nuevo lote
+PUT /api/lotes/:id – Actualizar lote
+DELETE /api/lotes/:id – Eliminar lote
+-Mediciones
+GET /api/mediciones – Listar mediciones
+GET /api/mediciones/:id – Obtener medición por ID
+GET /api/mediciones/lote/:loteId – Mediciones de un lote
+POST /api/mediciones – Registrar nueva medición
+PUT /api/mediciones/:id – Actualizar medición
+DELETE /api/mediciones/:id – Eliminar medición
+-Recomendaciones
+GET /api/recomendaciones – Listar recomendaciones
+GET /api/recomendaciones/:id – Obtener recomendación por ID
+GET /api/recomendaciones/lote/:loteId – Recomendaciones por lote
+GET /api/recomendaciones/medicion/:medicionId – Por medición
+POST /api/recomendaciones – Crear recomendación
+PUT /api/recomendaciones/:id – Actualizar recomendación
+DELETE /api/recomendaciones/:id – Eliminar recomendación
+-Sincronizaciones
+GET /api/sincronizaciones – Listar eventos de sincronización
+GET /api/sincronizaciones/:id – Obtener sincronización
+GET /api/sincronizaciones/lote/:loteId – Por lote
+GET /api/sincronizaciones/medicion/:medicionId – Por medición
+POST /api/sincronizaciones – Registrar sincronización
+PUT /api/sincronizaciones/:id – Actualizar estado
+DELETE /api/sincronizaciones/:id – Eliminar sincronización
+-Perfiles Ideales
+GET /api/perfiles – Listar todos los perfiles ideales
+GET /api/perfiles/:id – Obtener perfil por ID
+GET /api/perfiles/buscar?variedad=&proceso=&fase= – Buscar por combinación
+POST /api/perfiles – Crear perfil ideal
+PUT /api/perfiles/:id – Actualizar perfil
+DELETE /api/perfiles/:id – Eliminar perfil

@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+/* Design tokens para Tailwind v4 usando @theme */
+@theme {
+  /* Colores claros */
+  --color-background: 35 25% 94%;
+  --color-foreground: 30 15% 15%;
+
+  --color-card: 0 0% 100%;
+  --color-card-foreground: 30 15% 15%;
+
+  --color-popover: 0 0% 100%;
+  --color-popover-foreground: 30 15% 15%;
+
+  --color-primary: 88 45% 35%;
+  --color-primary-foreground: 0 0% 100%;
+
+  --color-secondary: 30 35% 65%;
+  --color-secondary-foreground: 30 15% 15%;
+
+  --color-muted: 35 20% 88%;
+  --color-muted-foreground: 30 10% 45%;
+
+  --color-accent: 25 70% 55%;
+  --color-accent-foreground: 0 0% 100%;
+
+  --color-destructive: 0 70% 50%;
+  --color-destructive-foreground: 0 0% 100%;
+
+  --color-border: 30 20% 85%;
+  --color-input: 30 20% 90%;
+  --color-ring: 88 45% 35%;
+
+  --radius: 0.75rem;
+
+  --color-sidebar-background: 35 30% 98%;
+  --color-sidebar-foreground: 30 15% 20%;
+  --color-sidebar-primary: 88 45% 35%;
+  --color-sidebar-primary-foreground: 0 0% 100%;
+  --color-sidebar-accent: 35 20% 92%;
+  --color-sidebar-accent-foreground: 30 15% 20%;
+  --color-sidebar-border: 30 15% 88%;
+  --color-sidebar-ring: 88 45% 35%;
+
+  --color-status-optimal: 142 76% 36%;
+  --color-status-good: 221 83% 53%;
+  --color-status-warning: 38 92% 50%;
+}
+
+/* Tokens para modo oscuro */
+@theme .dark {
+  --color-background: 30 15% 12%;
+  --color-foreground: 35 20% 90%;
+
+  --color-card: 30 15% 15%;
+  --color-card-foreground: 35 20% 90%;
+
+  --color-popover: 30 15% 15%;
+  --color-popover-foreground: 35 20% 90%;
+
+  --color-primary: 88 45% 45%;
+  --color-primary-foreground: 30 15% 10%;
+
+  --color-secondary: 30 20% 25%;
+  --color-secondary-foreground: 35 20% 90%;
+
+  --color-muted: 30 15% 20%;
+  --color-muted-foreground: 35 15% 60%;
+
+  --color-accent: 25 70% 45%;
+  --color-accent-foreground: 0 0% 100%;
+
+  --color-destructive: 0 70% 45%;
+  --color-destructive-foreground: 0 0% 100%;
+
+  --color-border: 30 15% 22%;
+  --color-input: 30 15% 22%;
+  --color-ring: 88 45% 45%;
+
+  --color-sidebar-background: 30 15% 10%;
+  --color-sidebar-foreground: 35 20% 85%;
+  --color-sidebar-primary: 88 45% 45%;
+  --color-sidebar-primary-foreground: 30 15% 10%;
+  --color-sidebar-accent: 30 15% 18%;
+  --color-sidebar-accent-foreground: 35 20% 85%;
+  --color-sidebar-border: 30 15% 18%;
+  --color-sidebar-ring: 88 45% 45%;
+
+  --color-status-optimal: 142 76% 40%;
+  --color-status-good: 221 83% 58%;
+  --color-status-warning: 38 92% 55%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html, body {
+    @apply bg-background text-foreground;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
