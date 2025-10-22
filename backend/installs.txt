@@ -1,0 +1,23 @@
+package :
+type module
+instalaciones
+npm i express
+npm i express-valideitor
+npm i npm i dotenv
+npm i axios
+npm i mongoose
+
+/fermenta-ia-backend
+|-- /models
+|   |-- medicion.model.js
+|   |-- lote.model.js
+|   |-- perfilIdeal.model.js
+|   |-- recomendacion.model.js
+|-- /routes
+|   |-- mediciones.routes.js
+|-- /controllers
+|   |-- mediciones.controller.js
+|-- /services
+|   |-- agent.service.js        <-- ✨ Aquí vivirá el "cerebro" del agente
+|-- app.js                      <-- Tu archivo principal de Express
+|-- package.json
