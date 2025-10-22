@@ -1,0 +1,110 @@
+{
+  "name": "Recomendaciones",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "consejos_fermentaIA",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b313cf32-460f-4a18-b119-375a44c70a11",
+      "name": "Webhook",
+      "webhookId": "e6281ff7-f2a6-4a96-892b-1198e0b1b63a"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un experto en fermentación de café artesanal que conoce los perfiles ideales de fermentación para distintas variedades, procesos y fases.\n\nRecibirás los siguientes datos:\n- Del lote:la veriedad{{ $json.body.lote.variedad }} ,el proceso{{ $json.body.lote.proceso }} y el estado en el que se encuentra{{ $json.body.lote.estado }}.\n- De la medición: pH{{ $json.body.medicion.ph }}, temperatura{{ $json.body.medicion.temperatura_c }}, material del tanque{{ $json.body.tanque.material }} y hora de la medición{{ $json.body.medicion.timestamp }}.\n- Además, dispones de una tabla interna (perfiles ideales) con rangos de pH y temperatura ideales para cada combinación de variedad, proceso y fase.\n\nTu tarea es comparar los valores medidos con los ideales del perfil correspondiente, y generar un consejo breve y amigable sobre cómo ajustar las condiciones o continuar el proceso.\n\nReglas:\n- Habla siempre en tono cálido y natural, como un amigo que da consejos prácticos (“la temperatura está algo alta, puedes mover el tanque a un sitio más fresco”).\n- No menciones valores numéricos, porcentajes ni términos técnicos.\n- Si los valores están dentro del rango ideal, felicita o motiva con algo positivo (“va muy bien, sigue cuidando el ambiente y el tiempo de fermentación”).\n- Si los valores están por encima o debajo de lo ideal, sugiere una acción sencilla para equilibrarlos.\n- Puedes tener en cuenta el material del tanque (por ejemplo, el plástico retiene más calor, el acero se enfría rápido).\n- Da una sola recomendación corta, de máximo dos frases, siempre en español.\n\nEjemplos de tono y estilo:\n- “La temperatura parece un poco alta, podrías dejar el tanque en un lugar más fresco para mantener un sabor suave.”\n- “El proceso va por buen camino, sigue vigilando de vez en cuando y evita que le entre demasiado aire.”\n- “Parece que hoy está más frío, tapa bien el tanque para conservar el calor durante la noche.”\n\nNo uses listas ni lenguaje técnico. Solo devuelve el consejo final.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "7bfa0abc-5530-47b2-a043-916b3b6ba189",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        160
+      ],
+      "id": "576c4621-8f2e-4262-9cc7-01444604b7a9",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "3eGEWgDfLkCgFMue",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "58a1b9ee-5a42-457b-ad41-2662d27fed62",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "62937af3db2b4f4c9a79ae2a0a109a3f5ab38fe229fa27223b419b7b168ec94b"
+  },
+  "id": "Xs7PaJLMi5mhVFnk",
+  "tags": [
+    {
+      "name": "Senasoft",
+      "id": "DhL65YrWU7BCTFK5",
+      "createdAt": "2025-10-22T19:13:52.770Z",
+      "updatedAt": "2025-10-22T19:13:52.770Z"
+    },
+    {
+      "name": "Recomendaciones",
+      "id": "Io79fyibQreWQ4Pe",
+      "createdAt": "2025-10-22T19:13:59.467Z",
+      "updatedAt": "2025-10-22T19:13:59.467Z"
+    }
+  ]
+}
