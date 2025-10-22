@@ -87,6 +87,11 @@ export const API = {
     update: (id: string | number) => `/api/perfiles/${id}`,
     remove: (id: string | number) => `/api/perfiles/${id}`,
   },
+  // IA
+  ai: {
+    chat: () => '/api/ai/chat',
+    recomendacion: () => '/api/ai/recomendacion'
+  }
 } as const;
 
 export type ApiMap = typeof API;

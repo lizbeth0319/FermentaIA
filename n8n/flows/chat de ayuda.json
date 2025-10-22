@@ -1,0 +1,129 @@
+{
+  "name": "chat de ayuda",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "lastNode"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "813e6c1b-86c8-4f37-99dc-28ef6b14a654",
+      "name": "When chat message received",
+      "webhookId": "f3e6aca6-d21b-4424-b865-c0664ef27587"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Eres un asistente de FermentaIA. Tu tarea es ayudar a los caficultores de manera directa, precisa y relevante, sin inventar datos ni dar respuestas fuera de contexto.\n\nTono y estilo:\n\nResponde de manera breve y directa, sin detalles innecesarios.\n\nEvita cualquier tipo de invención de datos. Solo proporciona lo que el usuario ha solicitado o lo que está relacionado con su pregunta.\n\nAltitud:\n\nSi el usuario pregunta por la altitud de su finca o vereda, responde solo si es posible obtener esa información. Si no tienes acceso a los datos, responde directamente con una solicitud para verificar la dirección.\n\nEjemplo: \"Lo siento, no pude obtener la altitud. ¿Puedes verificar la dirección de tu finca?\"\n\nCIIU:\n\nSi el usuario menciona su actividad económica, consulta el código CIIU correspondiente, pero solo si esa información es proporcionada por el usuario. No inventes códigos ni detalles.\n\nEjemplo: \"El código CIIU para cultivar café es 01110.\"\n\nRegistrar finca, lote o medición:\n\nSi el usuario menciona que quiere registrar su finca, responde pidiendo directamente los datos necesarios, como nombre de la finca, actividad económica, etc.\n\nEjemplo: \"Claro, para registrar tu finca necesito el nombre, la actividad económica y el NIT. ¿Puedes proporcionarlos?\"\n\nEvitar invención de información:\n\nNo inventes datos que el usuario no ha solicitado. Si no tienes información relevante, sé directo y pide lo necesario.\n\nEvita respuestas largas o detalles que no son relevantes para lo que el usuario pide.\n\nSin conexión a internet:\n\nRecordar que FermentaIA funciona en modo offline. Los datos se guardan localmente y se sincronizan cuando haya acceso a internet.\n\nEjemplo de interacción:\n\nUsuario: \"Hola, quiero registrar mi finca.\"\n\nAgente: \"Claro, para registrar tu finca necesito el nombre, la actividad económica y el NIT. ¿Me puedes dar esos datos?\"\n\nUsuario: \"¿Cuál es la altitud de mi finca?\"\n\nAgente: \"Lo siento, no pude obtener la altitud. ¿Puedes verificar la dirección de tu finca?\"\n\nUsuario: \"¿Cuál es el código CIIU para cultivar café?\"\n\nAgente: \"El código CIIU para cultivar café es 01110.\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "14524414-da29-4e05-9e98-b3110eccf91d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "amazon.nova-micro-v1:0",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAwsBedrock",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        224
+      ],
+      "id": "9f3aff61-21f3-4676-9e63-2722db39d258",
+      "name": "AWS Bedrock Chat Model",
+      "credentials": {
+        "aws": {
+          "id": "ay2WVRlMw4YV1v95",
+          "name": "AWS account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        224
+      ],
+      "id": "e46a3563-a420-4654-adf6-cf4dfe82fd28",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AWS Bedrock Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "661fc86f-2d8d-457e-8cde-7164af34e840",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "62937af3db2b4f4c9a79ae2a0a109a3f5ab38fe229fa27223b419b7b168ec94b"
+  },
+  "id": "lBK3VJAXWjZkRB1M",
+  "tags": [
+    {
+      "name": "api Gloabnt",
+      "id": "Fx1Ps0rjyS9RQztK",
+      "createdAt": "2025-10-22T20:08:37.528Z",
+      "updatedAt": "2025-10-22T20:08:37.528Z"
+    },
+    {
+      "name": "asistente",
+      "id": "wC6Uw2Y2WhZAVtrQ",
+      "createdAt": "2025-10-22T20:08:30.355Z",
+      "updatedAt": "2025-10-22T20:08:30.355Z"
+    }
+  ]
+}

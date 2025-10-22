@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { X, MessageCircle } from "lucide-react";
 import botImg from "@/assets/bot.png";
+import { apiFetch } from "../../api/http";
+import { API } from "../../api/endpoints";
 
 // Texto con efecto de máquina de escribir simple
 const TypewriterText = ({ text, speed = 18 }: { text: string; speed?: number }) => {
@@ -29,7 +31,7 @@ interface Message {
   content: string;
 }
 
-const FloatingAIWidget = () => {
+export const FloatingAIWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -41,6 +43,7 @@ const FloatingAIWidget = () => {
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [response, setResponse] = useState("");
 
   const generateAIResponse = (userInput: string) => {
     const input = userInput.toLowerCase();
@@ -116,6 +119,19 @@ const FloatingAIWidget = () => {
     }, Math.random() * 1500 + 800);
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const result = await apiFetch(API.ai.chat(), {
+        method: "POST",
+        body: { mensaje: inputMessage },
+      });
+      setResponse(result.response);
+    } catch (error) {
+      console.error("Error al procesar mensaje:", error);
+    }
+  };
+
   // Clases comunes
   const bubbleBase = "max-w-[240px] rounded-lg text-sm p-3";
 
@@ -178,23 +194,23 @@ const FloatingAIWidget = () => {
                 {isTyping && (
                   <div className="flex justify-start">
                     <div className={`${bubbleBase} bg-slate-100 text-slate-600 italic opacity-80`}>Fermenta Bot está escribiendo…</div>
-                  </div>
-                )}
-              </div>
-
-              {/* Input */}
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSendMessage();
-                  }}
-                  placeholder="Escribe tu consulta..."
-                  className="flex-1 rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                <button>
+                  className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-slate-200 hover:bg-slate-50"
+                  onClick={handleSendMessage}
+                  aria-label="Enviar"
+                > Input */}
+                  <MessageCircle className="h-4 w-4" />
+                </button>
+              </div>pe="text"
+            </div>value={inputMessage}
+          </div>  onChange={(e) => setInputMessage(e.target.value)}
+        </div>    onKeyDown={(e) => {
+      )}            if (e.key === "Enter") handleSendMessage();
+    </>           }}
+  );              placeholder="Escribe tu consulta..."
+};                className="flex-1 rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
                 />
-                <button
+export default FloatingAIWidget;
                   className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-slate-200 hover:bg-slate-50"
                   onClick={handleSendMessage}
                   aria-label="Enviar"
