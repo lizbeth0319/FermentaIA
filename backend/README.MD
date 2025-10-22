@@ -1,123 +1,87 @@
-package :
-type module
-instalaciones
-npm i express
-npm i express-validator
-npm i npm i dotenv
-npm i bcrypt
-npm i cors
-npm i jsonwebtoken
-npm i dotenv
-npm i axios
-npm i mongoose
+# Backend — FermentaIA
 
+README del backend: estructura, instalación y flujo básico.
 
+## Resumen
+Servicio REST en Node.js (Express) + MongoDB encargado de:
+- Recepción y almacenamiento de mediciones (temperatura, pH, humedad).
+- Gestión de recursos: fincas, lotes, tanques, productores.
+- Autenticación JWT.
+- Lógica de recomendaciones y sincronización offline/online.
+
+## Estructura del proyecto
 /backend
-    /.env
-/.gitignore
-/app.js
-/installs.txt--
-/package.json
-/config
-    db.js
-/controllers
-    Autenticacion.js
-    Finca.js
-    Lote.js
-    Medicion.js
-    PerfilIdeal.js
-    Productor.js
-    Recomendacion.js
-    Sincronizacion.js
-    Tanque.js
-/helpers
-    Autenticacion.js
-    Finca.js
-    Lote.js
-    Medicion.js
-    PerfilIdeal.js
-    Productor.js
-    Recomendacion.js
-    Sincronizacion.js
-    Tanque.js
-/middlewares
-    generar-jwt.js
-    validar-campo.js
-    validar-jwt.js
-/models
-    Finca.js
-    Lote.js
-    Medicion.js
-    PerfilIdeal.js
-    Productor.js
-    Recomendacion.js
-    Sincronizacion.js
-    Tanque.js
-/routers
-    Autenticacion.js
-    Finca.js
-    Lote.js
-    Medicion.js
-    PerfilIdeal.js
-    Productor.js
-    Recomendacion.js
-    Sincronizacion.js
-    Tanque.js
+- .env                      # variables de entorno
+- app.js                    # punto de entrada (Express)
+- package.json
+- installs.txt              # dependencias recomendadas / comandos
+- /config
+  - db.js                   # conexión a MongoDB
+- /routers                  # define rutas por recurso
+  - Autenticacion.js
+  - Finca.js
+  - Lote.js
+  - Medicion.js
+  - PerfilIdeal.js
+  - Productor.js
+  - Recomendacion.js
+  - Sincronizacion.js
+  - Tanque.js
+- /controllers              # lógica de cada endpoint (orquestación)
+- /models                   # esquemas Mongoose
+- /helpers                  # utilidades y transformaciones
+- /middlewares              # validaciones y auth (validar-jwt, generar-jwt, validar-campo)
 
+## Dependencias recomendadas
+- express
+- express-validator
+- dotenv
+- bcrypt
+- cors
+- jsonwebtoken
+- axios
+- mongoose
+- nodemon (dev)
 
-    --------------------
-    estructura General
-Estructura (resumen)
-/backend
-├─ .env
-├─ app.js                # entrada, configuración global de Express
-├─ config/
-│  └─ db.js              # conexión a MongoDB
-├─ routers/              # rutas por recurso (Autenticacion, Finca, Lote, ...)
-├─ controllers/          # lógica de cada endpoint (CRUD, orquestación)
-├─ middlewares/          # validar-jwt, validar-campo, generar-jwt
-├─ helpers/              # utilidades y transformaciones
-├─ models/               # esquemas Mongoose (Finca, Lote, Medicion, ...)
-└─ installs.txt / package.json
+Instalación rápida (desde la carpeta backend):
+```powershell
+cd c:\Users\Adminsena\Documents\Code\FermentaIA\backend
+npm install
+# para desarrollo
+npm run dev
+# para producción
+npm start
+```
 
-Flujo de una petición (simplificado)
-[Cliente móvil/Web]
-       |
-       v
-[Router]  -- ruta: /api/mediciones, /api/finca, /auth, ...
-       |
-       v
-[Middleware] -- validar campos, autenticar (validar-jwt), etc.
-       |
-       v
-[Controller] -- recibe req, valida negocio, llama a helpers/services
-       |
-       +--> [Helpers / Services] -- lógica reutilizable (recomendaciones, sincronización, perfiles)
-       |        
-       |
-       v
-[Modelos Mongoose] -- crea/lee/actualiza documentos en MongoDB
-       |
-       v
-[config/db.js] -- conexión a MongoDB
-       |
-       v
-[Respuesta al cliente] -- incluye datos y posibles recomendaciones
+## Variables de entorno (ejemplo)
+```env
+PORT=3000
+MONGO_URI=mongodb://localhost:27017/fermentaia
+JWT_SECRET=tu_clave_secreta
+```
 
-Flujo offline / sincronización (resumido)
-Dispositivo sin conexión -> guarda localmente -> cuando hay conectividad -> endpoint /sincronizacion -> controlador procesa y resuelve conflictos -> persiste en MongoDB -> responde con estado/últimas reglas
+## Flujo de una petición (simplificado)
+Cliente -> Router (/api/mediciones, /api/finca, /auth, ...) -> Middlewares (validación, auth) -> Controller -> Helpers/Services (recomendaciones, sincronización) -> Modelos Mongoose -> DB -> Respuesta al cliente
 
-Componentes clave para revisar/implementar
-- app.js: registrar routers y middlewares globales
-- config/db.js: manejar reconexión y opciones de timeout
-- middlewares: seguridad y validaciones
-- controllers: separar lógica de orquestación de acceso a datos
-- services/helpers: implementar agente de recomendaciones y reglas de perfil ideal
-- routers: agrupar endpoints bajo /api/<recurso>
+## Flujo offline / sincronización
+1. Dispositivo sin conexión guarda datos localmente.  
+2. Al reconectarse, cliente envía lotes a `/api/sincronizacion`.  
+3. Controller procesa, resuelve conflictos y persiste en MongoDB.  
+4. Respuesta incluye estado y posibles actualizaciones/reglas.
 
-Legend:
-- Router = mapea URL a controller
-- Middleware = pre-procesamiento (auth, validación)
-- Controller = orquesta, aplica reglas de negocio
-- Helper/Service = lógica reusable (recomendaciones, sincronización)
-- Model = acceso a datos (Mongoose)
+## Componentes clave (prioridad)
+- app.js: registrar routers y middlewares globales.  
+- config/db.js: conexión y manejo de reconexiones.  
+- middlewares: seguridad (validar-jwt) y validaciones (validar-campo).  
+- controllers: separar orquestación de acceso a datos.  
+- helpers/services: lógica del agente de recomendaciones y sincronización.  
+- models: definir esquemas y validaciones de datos.
+
+## Buenas prácticas / recomendaciones
+- Mantener controllers ligeros; mover lógica compleja a services/helpers.  
+- Versionar endpoints (ej.: /api/v1/mediciones) para futuros cambios.  
+- Añadir pruebas unitarias para controllers y helpers críticos.  
+- Registrar eventos importantes (errores, sincronizaciones) para diagnóstico.
+
+## Contacto
+Para cambios en rutas o lógica del agente, editar controllers y helpers correspondientes y documentar en este README.

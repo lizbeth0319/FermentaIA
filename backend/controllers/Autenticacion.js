@@ -81,12 +81,13 @@ export const loginUser = async (req, res) => {
         }
 
         try {
-            // Generar token
-            const token = await generarJWT(productor.email);
+            // Generar token usando el ID del productor
+            const token = await generarJWT(productor._id);
 
             return res.json({
                 success: true,
                 productor: {
+                    id: productor._id,
                     nombre: productor.nombre_completo,
                     email: productor.email,
                     regimen_tributario: productor.regimen_tributario
