@@ -2,6 +2,7 @@ import { Home, Coffee, Droplet, Thermometer, History, BarChart3, BookOpen, FileT
 import { Link, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { APP_NAME } from "@/config/constants";
+import LogoFermentaIA from "@/assets/LogoFermentaIA.png";
 
 interface SideMenuProps {
   isOpen: boolean;
@@ -69,9 +70,9 @@ const SideMenu = ({ isOpen, onClose }: SideMenuProps) => {
       >
         <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 flex items-center justify-between p-6" style={{ backgroundColor: 'white' }}>
           <div className="flex items-center gap-2">
-            <Coffee className="w-8 h-8 text-primary" />
-            <span className="font-bold text-xl text-gray-900 dark:text-white">{APP_NAME}</span>
-          </div>
+            <img src={LogoFermentaIA} alt="FermentaIA" className="w-8 h-8 object-contain" />
+            <span className="font-bold text-xl text-black">{APP_NAME}</span>
+           </div>
           <button onClick={onClose} className="lg:hidden text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white" aria-label="Cerrar menú">
             <X className="w-6 h-6" />
           </button>

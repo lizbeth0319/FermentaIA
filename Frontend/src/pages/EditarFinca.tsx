@@ -5,71 +5,91 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/sonner";
+import { apiFetch } from "@/api/http";
+import { API } from "@/api/endpoints";
 
-const storageKey = "fincas";
+// Modelo simplificado alineado con backend
+type FincaForm = {
+  nombre_finca: string;
+  departamento: string;
+  municipio: string;
+  vereda: string;
+  direccion: string;
+  nit: string;
+  ciiu: string;
+  altitud_ms_nm: string; // como string en el form
+};
 
-type Finca = {
-  id: number;
-  nombre: string;
-  ubicacion: string;
-  area: number;
+const initialForm: FincaForm = {
+  nombre_finca: "",
+  departamento: "",
+  municipio: "",
+  vereda: "",
+  direccion: "",
+  nit: "",
+  ciiu: "",
+  altitud_ms_nm: "",
 };
 
 const EditarFinca = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ nombre: "", ubicacion: "", area: "" });
+  const [formData, setFormData] = useState<FincaForm>(initialForm);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const fincaId = Number(id);
-    if (!fincaId) return;
-    try {
-      const saved = localStorage.getItem(storageKey);
-      const list: Finca[] = saved ? JSON.parse(saved) : [];
-      const finca = list.find((f) => f.id === fincaId);
-      if (!finca) {
-        toast("Finca no encontrada", { description: "Volviendo al listado." });
-        navigate("/fincas");
-        return;
-      }
-      setFormData({
-        nombre: finca.nombre,
-        ubicacion: finca.ubicacion,
-        area: String(finca.area ?? ""),
-      });
-      setLoaded(true);
-    } catch {
-      toast("Error", { description: "No se pudo cargar la finca." });
-      navigate("/fincas");
+    if (!id) {
+      toast("ID inválido", { description: "No se proporcionó un identificador." });
+      return;
     }
+    (async () => {
+      try {
+        const finca: any = await apiFetch(API.fincas.byId(id));
+        setFormData({
+          nombre_finca: finca?.nombre_finca ?? "",
+          departamento: finca?.departamento ?? "",
+          municipio: finca?.municipio ?? "",
+          vereda: finca?.vereda ?? "",
+          direccion: finca?.direccion ?? "",
+          nit: finca?.nit ?? "",
+          ciiu: finca?.ciiu ?? "",
+          altitud_ms_nm: String(finca?.altitud_ms_nm ?? ""),
+        });
+        setLoaded(true);
+      } catch (error: any) {
+        toast("No se pudo cargar la finca", { description: error?.message || "Error de red" });
+        navigate("/fincas");
+      }
+    })();
   }, [id, navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const fincaId = Number(id);
+    if (!id) return;
+
     try {
-      const saved = localStorage.getItem(storageKey);
-      const list: Finca[] = saved ? JSON.parse(saved) : [];
-      const idx = list.findIndex((f) => f.id === fincaId);
-      if (idx === -1) throw new Error("not-found");
-      const updated: Finca = {
-        id: fincaId,
-        nombre: formData.nombre.trim(),
-        ubicacion: formData.ubicacion.trim(),
-        area: Number(formData.area) || 0,
+      const payload = {
+        nombre_finca: formData.nombre_finca.trim(),
+        departamento: formData.departamento.trim(),
+        municipio: formData.municipio.trim(),
+        vereda: formData.vereda.trim(),
+        direccion: formData.direccion.trim(),
+        nit: formData.nit.trim(),
+        ciiu: formData.ciiu.trim(),
+        altitud_ms_nm: Number(formData.altitud_ms_nm) || 0,
       };
-      const next = [...list];
-      next[idx] = updated;
-      localStorage.setItem(storageKey, JSON.stringify(next));
-      toast("Cambios guardados", { description: `${updated.nombre} actualizado correctamente.` });
+
+      await apiFetch(API.fincas.update(id), { method: "PUT", body: payload });
+      toast("Cambios guardados", { description: `${payload.nombre_finca} actualizado correctamente.` });
       navigate("/fincas");
-    } catch {
-      toast("Error", { description: "No se pudo guardar la finca." });
+    } catch (error: any) {
+      toast("Error al guardar", { description: error?.message || "No se pudo actualizar la finca" });
     }
   };
 
-  if (!loaded) return null;
+  if (!loaded) return (
+    <div className="p-6"><div className="text-muted-foreground">Cargando finca...</div></div>
+  );
 
   return (
     <div className="p-6">
@@ -77,16 +97,40 @@ const EditarFinca = () => {
         <h1 className="text-2xl font-bold mb-4">Editar Finca</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label>Nombre</Label>
-            <Input value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} />
+            <Label>Nombre de la Finca</Label>
+            <Input value={formData.nombre_finca} onChange={(e) => setFormData({ ...formData, nombre_finca: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Departamento</Label>
+              <Input value={formData.departamento} onChange={(e) => setFormData({ ...formData, departamento: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Municipio</Label>
+              <Input value={formData.municipio} onChange={(e) => setFormData({ ...formData, municipio: e.target.value })} />
+            </div>
           </div>
           <div className="space-y-2">
-            <Label>Ubicación</Label>
-            <Input value={formData.ubicacion} onChange={(e) => setFormData({ ...formData, ubicacion: e.target.value })} />
+            <Label>Vereda</Label>
+            <Input value={formData.vereda} onChange={(e) => setFormData({ ...formData, vereda: e.target.value })} />
           </div>
           <div className="space-y-2">
-            <Label>Área (hectáreas)</Label>
-            <Input type="number" value={formData.area} onChange={(e) => setFormData({ ...formData, area: e.target.value })} />
+            <Label>Dirección</Label>
+            <Input value={formData.direccion} onChange={(e) => setFormData({ ...formData, direccion: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>NIT</Label>
+              <Input value={formData.nit} onChange={(e) => setFormData({ ...formData, nit: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>CIIU</Label>
+              <Input value={formData.ciiu} maxLength={3} onChange={(e) => setFormData({ ...formData, ciiu: e.target.value.replace(/\D/g, '').slice(0,3) })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Altitud (m.s.n.m)</Label>
+              <Input type="number" value={formData.altitud_ms_nm} onChange={(e) => setFormData({ ...formData, altitud_ms_nm: e.target.value })} />
+            </div>
           </div>
           <div className="flex gap-2">
             <Button type="submit" className="flex-1">Guardar cambios</Button>

@@ -5,80 +5,91 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/sonner";
+import { apiFetch } from "@/api/http";
+import { API } from "@/api/endpoints";
 
-const storageKey = "lotes";
-
-type Lote = {
-  id: number;
-  tanque: string;
+// Form alineado con backend
+type LoteForm = {
+  tanque_id: string;
   variedad: string;
-  proceso: string;
-  fecha: string;
-  cantidad: number;
+  proceso: "Lavado" | "Honey" | "Natural" | string;
+  fecha_inicio: string; // yyyy-mm-dd en el input
+  horas_estimadas: string;
+  cantidad_kg: string;
   estado: string;
+  premium_porcentaje: string;
+};
+
+const initialForm: LoteForm = {
+  tanque_id: "",
+  variedad: "",
+  proceso: "Lavado",
+  fecha_inicio: "",
+  horas_estimadas: "",
+  cantidad_kg: "",
+  estado: "En fermentación",
+  premium_porcentaje: "",
 };
 
 const EditarLote = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ tanque: "", variedad: "", proceso: "", fecha: "", cantidad: "", estado: "" });
+  const [formData, setFormData] = useState<LoteForm>(initialForm);
+  const [tanques, setTanques] = useState<any[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const loteId = Number(id);
-    if (!loteId) return;
-    try {
-      const saved = localStorage.getItem(storageKey);
-      const list: Lote[] = saved ? JSON.parse(saved) : [];
-      const lote = list.find((l) => l.id === loteId);
-      if (!lote) {
-        toast("Lote no encontrado", { description: "Volviendo al listado." });
+    (async () => {
+      try {
+        if (!id) throw new Error("ID inválido");
+        const lote: any = await apiFetch(API.lotes.byId(id));
+        setFormData({
+          tanque_id: lote?.tanque_id?._id || lote?.tanque_id || "",
+          variedad: lote?.variedad ?? "",
+          proceso: lote?.proceso ?? "Lavado",
+          fecha_inicio: lote?.fecha_inicio ? new Date(lote.fecha_inicio).toISOString().slice(0, 10) : "",
+          horas_estimadas: String(lote?.horas_estimadas ?? ""),
+          cantidad_kg: String(lote?.cantidad_kg ?? ""),
+          estado: lote?.estado ?? "En fermentación",
+          premium_porcentaje: String(lote?.premium_porcentaje ?? ""),
+        });
+
+        // Cargar tanques para el select
+        const tanquesResp: any[] = await apiFetch(API.tanques.list());
+        setTanques(Array.isArray(tanquesResp) ? tanquesResp : []);
+        setLoaded(true);
+      } catch (error: any) {
+        toast("No se pudo cargar el lote", { description: error?.message || "Error de red" });
         navigate("/lotes");
-        return;
       }
-      setFormData({
-        tanque: lote.tanque,
-        variedad: lote.variedad,
-        proceso: lote.proceso,
-        fecha: lote.fecha,
-        cantidad: String(lote.cantidad ?? ""),
-        estado: lote.estado,
-      });
-      setLoaded(true);
-    } catch {
-      toast("Error", { description: "No se pudo cargar el lote." });
-      navigate("/lotes");
-    }
+    })();
   }, [id, navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const loteId = Number(id);
+    if (!id) return;
     try {
-      const saved = localStorage.getItem(storageKey);
-      const list: Lote[] = saved ? JSON.parse(saved) : [];
-      const idx = list.findIndex((l) => l.id === loteId);
-      if (idx === -1) throw new Error("not-found");
-      const updated: Lote = {
-        id: loteId,
-        tanque: formData.tanque.trim(),
+      const payload = {
+        tanque_id: formData.tanque_id,
         variedad: formData.variedad.trim(),
-        proceso: formData.proceso.trim(),
-        fecha: formData.fecha,
-        cantidad: Number(formData.cantidad) || 0,
-        estado: formData.estado.trim(),
+        proceso: formData.proceso,
+        fecha_inicio: formData.fecha_inicio,
+        horas_estimadas: Number(formData.horas_estimadas) || 0,
+        cantidad_kg: Number(formData.cantidad_kg) || 0,
+        estado: formData.estado,
+        premium_porcentaje: formData.premium_porcentaje === "" ? 0 : Number(formData.premium_porcentaje),
       };
-      const next = [...list];
-      next[idx] = updated;
-      localStorage.setItem(storageKey, JSON.stringify(next));
+      await apiFetch(API.lotes.update(id), { method: "PUT", body: payload });
       toast("Cambios guardados", { description: `Lote actualizado correctamente.` });
       navigate("/lotes");
-    } catch {
-      toast("Error", { description: "No se pudo guardar el lote." });
+    } catch (error: any) {
+      toast("Error al guardar", { description: error?.message || "No se pudo actualizar el lote" });
     }
   };
 
-  if (!loaded) return null;
+  if (!loaded) return (
+    <div className="p-6"><div className="text-muted-foreground">Cargando lote...</div></div>
+  );
 
   return (
     <div className="p-6">
@@ -87,7 +98,16 @@ const EditarLote = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label>Tanque</Label>
-            <Input value={formData.tanque} onChange={(e) => setFormData({ ...formData, tanque: e.target.value })} />
+            <select
+              className="w-full border rounded-md p-2 bg-white"
+              value={formData.tanque_id}
+              onChange={(e) => setFormData({ ...formData, tanque_id: e.target.value })}
+            >
+              <option value="">Selecciona un tanque</option>
+              {tanques.map((t: any) => (
+                <option key={t._id} value={t._id}>{t.codigo_tanque} ({t.material}, {t.capacidad_kg} kg)</option>
+              ))}
+            </select>
           </div>
           <div className="space-y-2">
             <Label>Variedad</Label>
@@ -95,19 +115,48 @@ const EditarLote = () => {
           </div>
           <div className="space-y-2">
             <Label>Proceso</Label>
-            <Input value={formData.proceso} onChange={(e) => setFormData({ ...formData, proceso: e.target.value })} />
+            <select
+              className="w-full border rounded-md p-2 bg-white"
+              value={formData.proceso}
+              onChange={(e) => setFormData({ ...formData, proceso: e.target.value })}
+            >
+              <option>Lavado</option>
+              <option>Honey</option>
+              <option>Natural</option>
+            </select>
           </div>
           <div className="space-y-2">
-            <Label>Fecha</Label>
-            <Input type="date" value={formData.fecha} onChange={(e) => setFormData({ ...formData, fecha: e.target.value })} />
+            <Label>Fecha de inicio</Label>
+            <Input type="date" value={formData.fecha_inicio} onChange={(e) => setFormData({ ...formData, fecha_inicio: e.target.value })} />
           </div>
-          <div className="space-y-2">
-            <Label>Cantidad (kg)</Label>
-            <Input type="number" value={formData.cantidad} onChange={(e) => setFormData({ ...formData, cantidad: e.target.value })} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Horas estimadas</Label>
+              <Input type="number" value={formData.horas_estimadas} onChange={(e) => setFormData({ ...formData, horas_estimadas: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Cantidad (kg)</Label>
+              <Input type="number" value={formData.cantidad_kg} onChange={(e) => setFormData({ ...formData, cantidad_kg: e.target.value })} />
+            </div>
           </div>
           <div className="space-y-2">
             <Label>Estado</Label>
-            <Input value={formData.estado} onChange={(e) => setFormData({ ...formData, estado: e.target.value })} />
+            <select
+              className="w-full border rounded-md p-2 bg-background"
+              value={formData.estado}
+              onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+            >
+              <option>En fermentación</option>
+              <option>Listo para lavado</option>
+              <option>Lavado</option>
+              <option>Secado</option>
+              <option>Completado</option>
+              <option>Descarte</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label>Premium (%)</Label>
+            <Input type="number" value={formData.premium_porcentaje} onChange={(e) => setFormData({ ...formData, premium_porcentaje: e.target.value })} />
           </div>
           <div className="flex gap-2">
             <Button type="submit" className="flex-1">Guardar cambios</Button>
