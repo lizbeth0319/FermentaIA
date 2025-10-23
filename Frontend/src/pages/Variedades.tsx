@@ -3,11 +3,54 @@ import { Card } from "@/components/ui/card";
 
 const Variedades = () => {
   const variedades = [
-    { nombre: "Castillo", ph: 4.2, temperatura: 28, descripcion: "Variedad resistente a enfermedades, muy productiva" },
-    { nombre: "Caturra", ph: 4.5, temperatura: 25, descripcion: "Alta calidad en taza, tamaño compacto" },
-    { nombre: "Bourbon", ph: 4.3, temperatura: 27, descripcion: "Excelente calidad, sabor dulce y complejo" },
-    { nombre: "Típica", ph: 4.4, temperatura: 26, descripcion: "Variedad clásica, calidad excepcional" },
-    { nombre: "Colombia", ph: 4.2, temperatura: 28, descripcion: "Resistente a roya, buena productividad" },
+    { 
+      nombre: "Castillo", 
+      phRango: "4.0 - 5.5", 
+      tempRango: "18 - 28°C", 
+      descripcion: "Variedad resistente a la roya del café, desarrollada por Cenicafé. Alta productividad y adaptabilidad.",
+      caracteristicas: ["Resistente a enfermedades", "Alta productividad", "Buena adaptación climática"],
+      altitud: "1,200 - 2,000 msnm"
+    },
+    { 
+      nombre: "Caturra", 
+      phRango: "4.1 - 5.6", 
+      tempRango: "19 - 29°C", 
+      descripcion: "Mutación natural del Bourbon. Porte bajo, alta calidad en taza y excelente para altitudes medias.",
+      caracteristicas: ["Porte compacto", "Alta calidad", "Productividad media-alta"],
+      altitud: "1,200 - 2,100 msnm"
+    },
+    { 
+      nombre: "Bourbon", 
+      phRango: "3.9 - 5.4", 
+      tempRango: "18 - 32°C", 
+      descripcion: "Variedad tradicional de alta calidad. Sabor dulce y complejo, ideal para cafés especiales.",
+      caracteristicas: ["Excelente calidad", "Sabor complejo", "Tradicional"],
+      altitud: "1,000 - 2,000 msnm"
+    },
+    { 
+      nombre: "Típica", 
+      phRango: "4.0 - 5.5", 
+      tempRango: "18 - 27°C", 
+      descripcion: "Variedad ancestral del café arábica. Calidad excepcional pero menor productividad.",
+      caracteristicas: ["Calidad excepcional", "Variedad ancestral", "Baja productividad"],
+      altitud: "1,200 - 2,200 msnm"
+    },
+    { 
+      nombre: "Colombia", 
+      phRango: "4.0 - 5.4", 
+      tempRango: "18 - 28°C", 
+      descripcion: "Variedad desarrollada por Cenicafé, resistente a roya y con buena calidad en taza.",
+      caracteristicas: ["Resistente a roya", "Buena calidad", "Adaptable"],
+      altitud: "1,200 - 1,900 msnm"
+    },
+    { 
+      nombre: "Geisha", 
+      phRango: "4.2 - 5.8", 
+      tempRango: "16 - 25°C", 
+      descripcion: "Variedad premium de origen etíope. Perfil floral y frutal único, muy valorada en cafés especiales.",
+      caracteristicas: ["Perfil único", "Alta valoración", "Delicada"],
+      altitud: "1,400 - 2,200 msnm"
+    },
   ];
 
   return (
@@ -21,7 +64,7 @@ const Variedades = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {variedades.map((variedad) => (
+        {variedades.map((variedad, index) => (
           <Card key={variedad.nombre} className="p-6 hover:shadow-xl transition-all hover:scale-105">
             <div className="space-y-4">
               <div className="bg-primary/10 p-4 rounded-xl text-center">
@@ -31,30 +74,34 @@ const Variedades = () => {
 
               <p className="text-muted-foreground text-center">{variedad.descripcion}</p>
 
-              <div className="space-y-3 pt-2">
-                <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 p-4 rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">pH Ideal</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">{variedad.ph}</span>
-                    <div className="h-2 flex-1 ml-4 bg-blue-200 dark:bg-blue-900 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-blue-600 dark:bg-blue-400 rounded-full" 
-                        style={{ width: `${(variedad.ph / 7) * 100}%` }}
-                      />
-                    </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <span className="text-sm font-medium text-blue-700">Rango pH</span>
+                    <p className="text-lg font-semibold text-blue-800">{variedad.phRango}</p>
+                  </div>
+                  <div className="bg-red-50 p-3 rounded-lg">
+                    <span className="text-sm font-medium text-red-700">Temperatura</span>
+                    <p className="text-lg font-semibold text-red-800">{variedad.tempRango}</p>
                   </div>
                 </div>
-
-                <div className="bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-950/30 dark:to-orange-900/30 p-4 rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">Temperatura Ideal</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-3xl font-bold text-orange-600 dark:text-orange-400">{variedad.temperatura}°C</span>
-                    <div className="h-2 flex-1 ml-4 bg-orange-200 dark:bg-orange-900 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-orange-600 dark:bg-orange-400 rounded-full" 
-                        style={{ width: `${(variedad.temperatura / 35) * 100}%` }}
-                      />
-                    </div>
+                
+                <div className="bg-green-50 p-3 rounded-lg">
+                  <span className="text-sm font-medium text-green-700">Altitud óptima</span>
+                  <p className="text-lg font-semibold text-green-800">{variedad.altitud}</p>
+                </div>
+                
+                <div>
+                  <span className="text-sm font-medium text-gray-700 mb-2 block">Características principales</span>
+                  <div className="flex flex-wrap gap-2">
+                    {variedad.caracteristicas.map((caracteristica, idx) => (
+                      <span 
+                        key={idx} 
+                        className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
+                      >
+                        {caracteristica}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>

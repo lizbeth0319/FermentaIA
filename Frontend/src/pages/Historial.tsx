@@ -7,26 +7,67 @@ import { useNavigate } from "react-router-dom";
 import { apiFetch } from "@/api/http";
 import { API } from "@/api/endpoints";
 import { toast } from "@/components/ui/sonner";
+import { currentUserId } from "@/api/auth";
 
 const Historial = () => {
   const navigate = useNavigate();
   const [mediciones, setMediciones] = useState<any[]>([]);
   const [lotes, setLotes] = useState<any[]>([]);
   const [tanques, setTanques] = useState<any[]>([]);
+  const [fincas, setFincas] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
-        const [meds, lots, tans] = await Promise.all([
-          apiFetch<any[]>(API.mediciones.list()),
-          apiFetch<any[]>(API.lotes.list()),
-          apiFetch<any[]>(API.tanques.list()),
-        ]);
-        setMediciones(meds || []);
-        setLotes(lots || []);
-        setTanques(tans || []);
+        const userId = currentUserId();
+        
+        if (userId) {
+          // Si hay usuario autenticado, filtrar por sus fincas
+          const [userFincas, allMediciones, allLotes, allTanques] = await Promise.all([
+            apiFetch<any[]>(API.fincas.byProductor(userId)),
+            apiFetch<any[]>(API.mediciones.list()),
+            apiFetch<any[]>(API.lotes.list()),
+            apiFetch<any[]>(API.tanques.list()),
+          ]);
+          
+          // Obtener IDs de fincas del usuario
+          const userFincaIds = (userFincas || []).map(f => f._id || f.id);
+          
+          // Filtrar tanques que pertenecen a las fincas del usuario
+          const userTanques = (allTanques || []).filter(t => 
+            userFincaIds.includes(t.finca_id?._id || t.finca_id)
+          );
+          const userTanqueIds = userTanques.map(t => t._id || t.id);
+          
+          // Filtrar lotes que pertenecen a los tanques del usuario
+          const userLotes = (allLotes || []).filter(l => 
+            userTanqueIds.includes(l.tanque_id?._id || l.tanque_id)
+          );
+          const userLoteIds = userLotes.map(l => l._id || l.id);
+          
+          // Filtrar mediciones que pertenecen a los lotes del usuario
+          const userMediciones = (allMediciones || []).filter(m => 
+            userLoteIds.includes(m.lote)
+          );
+          
+          setFincas(userFincas || []);
+          setMediciones(userMediciones);
+          setLotes(userLotes);
+          setTanques(userTanques);
+        } else {
+          // Si no hay usuario autenticado, mostrar todos (fallback)
+          const [meds, lots, tans] = await Promise.all([
+            apiFetch<any[]>(API.mediciones.list()),
+            apiFetch<any[]>(API.lotes.list()),
+            apiFetch<any[]>(API.tanques.list()),
+          ]);
+          setMediciones(meds || []);
+          setLotes(lots || []);
+          setTanques(tans || []);
+          setFincas([]);
+        }
       } catch (error: any) {
         toast("Error al cargar historial", { description: error.message || "No se pudo cargar" });
       } finally {
