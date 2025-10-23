@@ -1,0 +1,17 @@
+{
+  "name": "n8n-service",
+  "version": "1.0.0",
+  "description": "FermentaIA es una solución agéntica impulsada por inteligencia artificial, diseñada para mejorar el proceso de fermentación del café en las zonas rurales de Colombia. Su objetivo principal es asistir a los caficultores en la toma de decisiones, analizando datos como la temperatura y el pH, y ofreciendo recomendaciones para estandarizar y hacer más trazables los procesos. El proyecto busca aumentar la calidad del café en un 30%, reducir pérdidas y empoderar a las comunidades rurales con tecnología accesible. En el futuro, planea integrar sensores, modelos predictivos y expandirse a otros cultivos.",
+  "main": "start-n8n.js",
+  "type": "module",
+  "scripts": {
+    "start": "n8n start --tunnel", 
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "n8n": "^0.208.1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

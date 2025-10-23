@@ -117,7 +117,8 @@ npm install
 node app.js
 # Por defecto en http://localhost:3000
 ```
-
+Consulta la documentación completa aquí:  
+[../README.md](./backend/README.MD)
 ### Frontend
 
 ```powershell
@@ -127,7 +128,8 @@ npm run dev
 # Vite en http://localhost:8080 (usa otro puerto si 8080 está ocupado)
 # Base URL configurable con VITE_API_URL en .env.local
 ```
-
+Consulta la documentación completa aquí:  
+[../README.md](./Frontend/README.md)
 ## Referencias internas
 
 - Frontend: `Frontend/README.md` — arquitectura, ruteo y guías de API.
@@ -139,6 +141,8 @@ npm run dev
 - Agente de guía conversacional: asistencia empática y contextual al productor durante el flujo de fermentación.
 - Pendiente: agente de transcripción de voz (no incluido por tiempo y consideraciones estadísticas). Se propone incorporar transcripción local robusta y fallback a servicios externos con control de privacidad.
 
+Consulta la documentación completa aquí:  
+[../README.md](./n8n/README.MD)
 ## Espacio para ampliación (narrativa y objetivo)
 
 > FermentaIA es una solución agéntica, rural, offline-first e inclusiva, desarrollada para revolucionar el proceso de fermentación del café en las zonas rurales de Colombia mediante el uso responsable y accesible de la inteligencia artificial. Su propósito es claro: asistir al caficultor en la toma de decisiones técnicas durante la fermentación, reduciendo la dependencia de la intuición empírica y garantizando procesos más estandarizados, trazables y de alta calidad sensorial. Durante décadas, los productores rurales han enfrentado un desafío constante: la falta de herramientas tecnológicas y científicas que les permitan monitorear y controlar las variables críticas del proceso de fermentación —como la temperatura, el pH y las condiciones ambientales. Estas limitaciones generan pérdidas económicas significativas, disminuyen la calidad exportable del café y perpetúan la desigualdad tecnológica entre el campo y la ciudad. FermentaIA surge como respuesta a esta problemática, integrando tres pilares estratégicos: Accesibilidad tecnológica rural (plataforma ligera y funcional sin conexión, con sincronización automática), Asistencia inteligente contextual (agente IA colaborativo que interpreta datos capturados y emite diagnósticos comprensibles con recomendaciones accionables) y Diseño humano y sostenible (interfaz minimalista, multilingüe y de alto contraste, optimizada para móviles de bajo costo y entornos con baja alfabetización digital). FermentaIA se define como asistente de apoyo técnico (no sustituye el conocimiento del caficultor) y promueve una relación colaborativa (la IA guía/analiza; el productor decide). Este enfoque se alinea con niveles L1–L3 del marco de la Universidad de Washington (2025). Inicialmente, permite: registrar mediciones de temperatura y pH por voz o texto; analizar los datos frente a rangos ideales por variedad y etapa; generar diagnóstico y recomendaciones visuales/auditivas; guardar registros localmente y sincronizar al recuperar conectividad; consultar históricos y comparar resultados. El impacto esperado: aumentar la calidad promedio de los lotes, reducir pérdidas y generar una cultura de análisis técnico accesible. FermentaIA representa una estrategia de transformación rural donde la tecnología conecta ciencia, tradición cafetera y sostenibilidad; busca consolidarse como un modelo de innovación social replicable, fortaleciendo la competitividad del café colombiano, mejorando trazabilidad y empoderando comunidades rurales con conocimiento, tecnología y autonomía.
