@@ -6,9 +6,25 @@ import { componentTagger } from "lovable-tagger";
 import tsconfigPaths from "vite-tsconfig-paths";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  server: {
-    host: "localhost",
-    port: 8080,
+  "server": {
+    host: "0.0.0.0",
+    port: process.env.PORT || 8080,
+  },
+  build: {
+    outDir: "dist",
+    minify: "terser",
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: [
+            'react', 
+            'react-dom', 
+            'react-router-dom'
+          ],
+        }
+      }
+    }
   },
   plugins: [
     react(),

@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: n8n-fermentaia
+    env: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: N8N_HOST
+        value: n8n-fermentaia.onrender.com
+      - key: N8N_PROTOCOL
+        value: https
+      - key: N8N_PORT
+        value: 443
+      - key: N8N_ENCRYPTION_KEY
+        generateValue: true
+      - key: DB_TYPE
+        value: sqlite
+      - key: DB_SQLITE_PATH
+        value: /data/database.sqlite
+      - key: N8N_USER_FOLDER
+        value: /data
+    disk:
+      name: n8n-data
+      mountPath: /data
+      sizeGB: 1
