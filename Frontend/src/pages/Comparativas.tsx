@@ -9,6 +9,9 @@ import { API } from "@/api/endpoints";
 const Comparativas = () => {
   const [params] = useSearchParams();
   const [perfil, setPerfil] = useState<any | null>(null);
+  const [recLoading, setRecLoading] = useState<boolean>(false);
+  const [recomendacion, setRecomendacion] = useState<string>("");
+  const [recError, setRecError] = useState<string>("");
   const variedad = params.get("variedad") || "";
   const proceso = params.get("proceso") || "";
   const fase = params.get("fase") || ""; // se espera 'inicio' | 'media' | 'fin'
@@ -27,6 +30,35 @@ const Comparativas = () => {
     };
     load();
   }, [variedad, proceso, fase]);
+
+  // Llamar a IA -> n8n para obtener recomendación según los params
+  useEffect(() => {
+    const fetchRecomendacion = async () => {
+      setRecError("");
+      setRecomendacion("");
+      if (!variedad || !proceso || !fase) return;
+      try {
+        setRecLoading(true);
+        const body = {
+          lote: { variedad, proceso, estado: fase },
+          medicion: { ph: phActual, temperatura_c: tempActual, timestamp: new Date().toISOString() },
+          tanque: {}
+        };
+        const resp = await apiFetch<{ recomendacion?: string; output?: string }>(API.ai.recomendacion(), {
+          method: "POST",
+          body,
+        });
+        const text = resp?.recomendacion || resp?.output || "";
+        setRecomendacion(text);
+      } catch (e: any) {
+        setRecError(e?.message || "No se pudo obtener la recomendación");
+      } finally {
+        setRecLoading(false);
+      }
+    };
+    fetchRecomendacion();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [variedad, proceso, fase, phActual, tempActual]);
 
   const estadoPh = useMemo(() => {
     if (!perfil) return "—";
@@ -190,18 +222,25 @@ const Comparativas = () => {
         </div>
       </Card>
 
-      {/* Recomendaciones */}
+      {/* Recomendaciones (IA/n8n) */}
       <Card className="p-6 bg-primary/10 border-2 border-primary">
         <h3 className="text-xl font-bold mb-3">📋 Recomendaciones</h3>
         <div className="space-y-2 text-foreground">
-          {!perfil ? (
-            <p>• No se encontró perfil ideal para la combinación seleccionada.</p>
-          ) : (
-            <>
-              <p>• Mantén pH en rango {perfil.ph_min}–{perfil.ph_max}. Actual: {phActual}.</p>
-              <p>• Mantén temperatura entre {perfil.temp_min_c}–{perfil.temp_max_c}°C. Actual: {tempActual}°C.</p>
-              <p>• Repite mediciones cada 12 horas para un mejor seguimiento.</p>
-            </>
+          {recLoading && <p>Obteniendo recomendación…</p>}
+          {recError && <p className="text-red-600">{recError}</p>}
+          {!recLoading && !recError && recomendacion && (
+            <p>• {recomendacion}</p>
+          )}
+          {!recLoading && !recError && !recomendacion && (
+            !perfil ? (
+              <p>• No se encontró perfil ideal para la combinación seleccionada.</p>
+            ) : (
+              <>
+                <p>• Mantén pH en rango {perfil.ph_min}–{perfil.ph_max}. Actual: {phActual}.</p>
+                <p>• Mantén temperatura entre {perfil.temp_min_c}–{perfil.temp_max_c}°C. Actual: {tempActual}°C.</p>
+                <p>• Repite mediciones cada 12 horas para un mejor seguimiento.</p>
+              </>
+            )
           )}
         </div>
       </Card>

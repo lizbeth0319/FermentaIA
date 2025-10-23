@@ -2,9 +2,11 @@ import AIService from '../services/AIService.js';
 
 export const procesarChat = async (req, res) => {
   try {
-    const { mensaje, message } = req.body;
+    const { mensaje, message, sessionId: bodySessionId } = req.body;
     const inputMessage = mensaje || message;
-    const respuesta = await AIService.processChatRequest(inputMessage);
+    // Usa el id del productor autenticado como sessionId; fallback a sessionId del body o IP
+    const sessionId = req?.productor?._id?.toString() || bodySessionId || req.ip;
+    const respuesta = await AIService.processChatRequest(inputMessage, sessionId);
     res.json(respuesta);
   } catch (error) {
     res.status(500).json({

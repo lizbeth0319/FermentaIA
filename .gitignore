@@ -1,0 +1,31 @@
+# Root ignores for secrets and local envs
+
+# Environment files (root)
+.env
+.env.*
+!.env.example
+
+# Backend envs
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Frontend envs (Vite)
+Frontend/.env
+Frontend/.env.*
+!Frontend/.env.local.example
+!Frontend/.env.example
+
+# Common
+*.local
+*.env.local
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+
+# Archives
+*.rar
+*.zip
