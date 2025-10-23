@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Thermometer, Droplet, Mic, Plus } from "lucide-react";
+import { Thermometer, Droplet, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -198,10 +198,7 @@ const Mediciones = () => {
               value={formData.observaciones}
               onChange={(e) => setFormData({...formData, observaciones: e.target.value})}
             />
-            <Button type="button" variant="outline" className="mt-2">
-              <Mic className="w-4 h-4 mr-2" />
-              Grabar Audio
-            </Button>
+            {/* Botón de grabar audio eliminado */}
           </div>
 
           <Button type="submit" size="lg" className="w-full text-lg py-6">
