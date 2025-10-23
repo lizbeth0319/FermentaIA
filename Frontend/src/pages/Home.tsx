@@ -1,14 +1,13 @@
-import { Coffee, Droplet, Thermometer, BarChart3, Bell, Plus } from "lucide-react";
+import { Bell } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
 const Home = () => {
   const shortcuts = [
-    { icon: Coffee, label: "Registrar Finca", path: "/fincas", color: "bg-primary" },
-    { icon: Droplet, label: "Registrar Tanque", path: "/tanques", color: "bg-secondary" },
-    { icon: Coffee, label: "Registrar Lote", path: "/lotes", color: "bg-accent" },
-    { icon: BarChart3, label: "Ver Mediciones", path: "/mediciones", color: "bg-primary" },
+    { emoji: "🏡", label: "Registrar Finca", path: "/fincas", color: "bg-primary" },
+    { emoji: "🛢️", label: "Registrar Tanque", path: "/tanques", color: "bg-secondary" },
+    { emoji: "🫘", label: "Registrar Lote", path: "/lotes", color: "bg-accent" },
+    { emoji: "📊", label: "Ver Mediciones", path: "/mediciones", color: "bg-primary" },
   ];
 
   const alerts = [
@@ -29,21 +28,20 @@ const Home = () => {
       <div>
         <h2 className="text-2xl font-semibold text-foreground mb-4">Accesos Rápidos</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {shortcuts.map((shortcut) => {
-            const Icon = shortcut.icon;
-            return (
-              <Link key={shortcut.path} to={shortcut.path}>
-                <Card className="p-6 hover:shadow-xl transition-all hover:scale-105 cursor-pointer">
-                  <div className="flex flex-col items-center gap-3 text-center">
-                    <div className={`${shortcut.color} p-4 rounded-2xl`}>
-                      <Icon className="w-8 h-8 text-white" />
-                    </div>
-                    <span className="font-semibold text-lg">{shortcut.label}</span>
+          {shortcuts.map((shortcut) => (
+            <Link key={shortcut.path} to={shortcut.path}>
+              <Card className="p-6 hover:shadow-xl transition-all hover:scale-105 cursor-pointer">
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <div className={`${shortcut.color} p-4 rounded-2xl`}
+                       aria-hidden="true"
+                       title={shortcut.label}>
+                    <span className="text-3xl select-none">{shortcut.emoji}</span>
                   </div>
-                </Card>
-              </Link>
-            );
-          })}
+                  <span className="font-semibold text-lg">{shortcut.label}</span>
+                </div>
+              </Card>
+            </Link>
+          ))}
         </div>
       </div>
 
