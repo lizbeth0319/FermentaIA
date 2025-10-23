@@ -9,11 +9,12 @@ import { Link } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
 import { apiFetch } from "@/api/http";
 import { API } from "@/api/endpoints";
+import { currentUserId } from "@/api/auth";
 
 const Tanques = () => {
-  const [tanques, setTanques] = useState([]);
+  const [tanques, setTanques] = useState([] as any[]);
   const [loading, setLoading] = useState(true);
-  const [fincas, setFincas] = useState([]);
+  const [fincas, setFincas] = useState([] as any[]);
 
   const [newTanque, setNewTanque] = useState({
     finca_id: "",
@@ -30,16 +31,41 @@ const Tanques = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      // Cargar tanques y fincas en paralelo
-      const [tanquesData, fincasData] = await Promise.all([
-        apiFetch(API.tanques.list()),
-        apiFetch(API.fincas.list())
-      ]);
-      setTanques(tanquesData || []);
-      setFincas(fincasData || []);
+      const pid = currentUserId();
+      if (pid) {
+        // Usuario autenticado: cargar fincas del usuario y sus tanques
+        try {
+          const fincasResp: any[] = await apiFetch(API.fincas.byProductor(pid));
+          setFincas(fincasResp || []);
+
+          // Para cada finca del usuario, obtener sus tanques
+          const tanquesPromises = (fincasResp || []).map((finca: any) => 
+            apiFetch(API.tanques.byFinca(finca._id))
+          );
+          const tanquesLists = await Promise.all(tanquesPromises);
+          const tanquesFlat = tanquesLists.flat();
+          setTanques(tanquesFlat || []);
+        } catch (err: any) {
+          // Si no hay fincas (404), dejar vacío sin error visual
+          if (err?.status === 404) {
+            setFincas([]);
+            setTanques([]);
+          } else {
+            throw err;
+          }
+        }
+      } else {
+        // Sin token: cargar todos (fallback)
+        const [tanquesResp, fincasResp] = await Promise.all([
+          apiFetch(API.tanques.list()),
+          apiFetch(API.fincas.list()),
+        ]);
+        setTanques(tanquesResp || []);
+        setFincas(fincasResp || []);
+      }
     } catch (error: any) {
       toast("Error al cargar datos", { 
-        description: error.message || "No se pudieron cargar los datos" 
+        description: error.message || "No se pudieron cargar tanques/fincas" 
       });
     } finally {
       setLoading(false);
@@ -48,11 +74,17 @@ const Tanques = () => {
 
   const handleAdd = async () => {
     try {
+      const capacidad = Number(newTanque.capacidad_kg);
+      if (!newTanque.finca_id || !newTanque.codigo_tanque?.trim() || !newTanque.material?.trim() || !(Number.isFinite(capacidad) && capacidad > 0)) {
+        toast("Datos incompletos", { description: "Selecciona una finca y completa código, capacidad (>0) y material." });
+        return;
+      }
+
       const payload = {
         finca_id: newTanque.finca_id,
-        codigo_tanque: newTanque.codigo_tanque,
-        capacidad_kg: Number(newTanque.capacidad_kg) || 0,
-        material: newTanque.material,
+        codigo_tanque: newTanque.codigo_tanque.trim(),
+        capacidad_kg: capacidad,
+        material: newTanque.material.trim(),
       };
 
       await apiFetch(API.tanques.create(), { method: "POST", body: payload });
@@ -128,6 +160,7 @@ const Tanques = () => {
                   placeholder="Ej: 2000"
                   value={newTanque.capacidad_kg}
                   onChange={(e) => setNewTanque({ ...newTanque, capacidad_kg: e.target.value })}
+                  min={1}
                 />
               </div>
               <div className="space-y-2">

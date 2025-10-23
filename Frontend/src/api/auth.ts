@@ -53,3 +53,25 @@ export async function login(data: LoginPayload) {
 export async function register(data: RegisterPayload) {
   return apiFetch(API.auth.register(), { method: "POST", body: data });
 }
+
+// Obtiene el id del usuario autenticado desde el JWT almacenado
+export function currentUserId(): string | null {
+  const token = authToken.get();
+  if (!token) return null;
+  try {
+    const payloadBase64 = token.split(".")[1];
+    if (!payloadBase64) return null;
+    const json = JSON.parse(atob(payloadBase64));
+    const maybe =
+      (json?.id as string) ||
+      (json?._id as string) ||
+      (json?.uid as string) ||
+      (json?.userId as string) ||
+      (json?.sub as string) ||
+      (json?.productorId as string) ||
+      null;
+    return typeof maybe === "string" && maybe.length > 0 ? maybe : null;
+  } catch {
+    return null;
+  }
+}
