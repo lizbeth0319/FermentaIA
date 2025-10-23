@@ -1,12 +1,40 @@
+import { useEffect, useState } from "react";
 import { User, LogOut, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { apiFetch } from "@/api/http";
+import { API } from "@/api/endpoints";
+import { authToken, currentUserId } from "@/api/auth";
 
 const MiCuenta = () => {
   const navigate = useNavigate();
+  const [nombre, setNombre] = useState<string>("...");
+  const [email, setEmail] = useState<string>("...");
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const uid = currentUserId();
+        if (!uid) return; // deja los placeholders si no hay sesión
+        const res: any = await apiFetch(API.productores.byId(uid));
+        // El backend responde { success, data }
+        const data = res?.data || res;
+        if (data) {
+          setNombre(data.nombre_completo || data.nombre || nombre);
+          setEmail(data.email || email);
+        }
+      } catch (err) {
+        // Silencioso: mantenemos placeholders si falla
+        console.warn("No se pudo cargar el perfil del usuario", err);
+      }
+    };
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLogout = () => {
+    try { authToken.clear(); } catch {}
     navigate("/");
   };
 
@@ -23,8 +51,8 @@ const MiCuenta = () => {
             <User className="w-16 h-16 text-primary-foreground" />
           </div>
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-foreground">Juan Pérez</h2>
-            <p className="text-muted-foreground">juan.perez@email.com</p>
+            <h2 className="text-2xl font-bold text-foreground">{nombre}</h2>
+            <p className="text-muted-foreground">{email}</p>
           </div>
         </div>
 
