@@ -2,8 +2,9 @@ import AIService from '../services/AIService.js';
 
 export const procesarChat = async (req, res) => {
   try {
-    const { mensaje } = req.body;
-    const respuesta = await AIService.processChatRequest(mensaje);
+    const { mensaje, message } = req.body;
+    const inputMessage = mensaje || message;
+    const respuesta = await AIService.processChatRequest(inputMessage);
     res.json(respuesta);
   } catch (error) {
     res.status(500).json({

@@ -9,11 +9,12 @@ import { Link } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
 import { apiFetch } from "@/api/http";
 import { API } from "@/api/endpoints";
+import { currentUserId } from "@/api/auth";
 
 const Tanques = () => {
-  const [tanques, setTanques] = useState([]);
+  const [tanques, setTanques] = useState([] as any[]);
   const [loading, setLoading] = useState(true);
-  const [fincas, setFincas] = useState([]);
+  const [fincas, setFincas] = useState([] as any[]);
 
   const [newTanque, setNewTanque] = useState({
     finca_id: "",
@@ -30,16 +31,54 @@ const Tanques = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      // Cargar tanques y fincas en paralelo
-      const [tanquesData, fincasData] = await Promise.all([
-        apiFetch(API.tanques.list()),
-        apiFetch(API.fincas.list())
-      ]);
-      setTanques(tanquesData || []);
-      setFincas(fincasData || []);
+      const pid = currentUserId();
+      console.log("🔍 loadData iniciado - Usuario ID:", pid);
+      console.log("🔍 Tipo de usuario ID:", typeof pid);
+      
+      if (pid) {
+        // Usuario autenticado: cargar fincas del usuario y sus tanques
+        try {
+          const fincasUrl = API.fincas.byProductor(pid);
+          console.log("🌐 URL para fincas:", fincasUrl);
+          const fincasResp: any[] = await apiFetch(fincasUrl);
+          console.log("🏠 Fincas cargadas:", fincasResp);
+          setFincas(fincasResp || []);
+
+          // Para cada finca del usuario, obtener sus tanques
+          const tanquesPromises = (fincasResp || []).map((finca: any) => {
+            const tanquesUrl = API.tanques.byFinca(finca._id);
+            console.log("🔄 Cargando tanques para finca:", finca._id, finca.nombre_finca, "URL:", tanquesUrl);
+            return apiFetch(tanquesUrl);
+          });
+          const tanquesLists = await Promise.all(tanquesPromises);
+          console.log("📦 Listas de tanques por finca:", tanquesLists);
+          const tanquesFlat = tanquesLists.flat();
+          console.log("🚰 Tanques finales (flat):", tanquesFlat);
+          setTanques(tanquesFlat || []);
+        } catch (err: any) {
+          console.log("❌ Error cargando fincas/tanques:", err);
+          // Si no hay fincas (404), dejar vacío sin error visual
+          if (err?.status === 404) {
+            setFincas([]);
+            setTanques([]);
+          } else {
+            throw err;
+          }
+        }
+      } else {
+        // Sin token: cargar todos (fallback)
+        const [tanquesResp, fincasResp] = await Promise.all([
+          apiFetch(API.tanques.list()),
+          apiFetch(API.fincas.list()),
+        ]);
+        console.log("🌐 Modo sin autenticación - Tanques:", tanquesResp, "Fincas:", fincasResp);
+        setTanques(tanquesResp || []);
+        setFincas(fincasResp || []);
+      }
     } catch (error: any) {
+      console.error("💥 Error en loadData:", error);
       toast("Error al cargar datos", { 
-        description: error.message || "No se pudieron cargar los datos" 
+        description: error.message || "No se pudieron cargar tanques/fincas" 
       });
     } finally {
       setLoading(false);
@@ -48,11 +87,17 @@ const Tanques = () => {
 
   const handleAdd = async () => {
     try {
+      const capacidad = Number(newTanque.capacidad_kg);
+      if (!newTanque.finca_id || !newTanque.codigo_tanque?.trim() || !newTanque.material?.trim() || !(Number.isFinite(capacidad) && capacidad > 0)) {
+        toast("Datos incompletos", { description: "Selecciona una finca y completa código, capacidad (>0) y material." });
+        return;
+      }
+
       const payload = {
         finca_id: newTanque.finca_id,
-        codigo_tanque: newTanque.codigo_tanque,
-        capacidad_kg: Number(newTanque.capacidad_kg) || 0,
-        material: newTanque.material,
+        codigo_tanque: newTanque.codigo_tanque.trim(),
+        capacidad_kg: capacidad,
+        material: newTanque.material.trim(),
       };
 
       await apiFetch(API.tanques.create(), { method: "POST", body: payload });
@@ -60,7 +105,8 @@ const Tanques = () => {
 
       setNewTanque({ finca_id: "", codigo_tanque: "", capacidad_kg: "", material: "" });
       setOpen(false);
-      loadData(); // recargar lista
+      
+      await loadData(); // recargar lista
     } catch (error: any) {
       toast("Error al crear tanque", { description: error.message || "No se pudo crear el tanque" });
     }
@@ -79,6 +125,14 @@ const Tanques = () => {
       toast("Error al eliminar tanque", { description: error.message || "No se pudo eliminar el tanque" });
     }
   };
+
+  console.log("🎨 Renderizando tanques - Estado actual:", { 
+    tanquesLength: tanques.length, 
+    tanques: tanques,
+    fincasLength: fincas.length,
+    fincas: fincas,
+    loading: loading 
+  });
 
   return (
     <div className="p-6 space-y-6">
@@ -111,7 +165,7 @@ const Tanques = () => {
               <div className="space-y-2">
                 <Label>Finca</Label>
                 <select
-                  className="w-full border rounded-md px-3 py-2 bg-background"
+                  className="w-full border rounded-md px-3 py-2 bg-white"
                   value={newTanque.finca_id}
                   onChange={(e) => setNewTanque({ ...newTanque, finca_id: e.target.value })}
                 >
@@ -128,6 +182,7 @@ const Tanques = () => {
                   placeholder="Ej: 2000"
                   value={newTanque.capacidad_kg}
                   onChange={(e) => setNewTanque({ ...newTanque, capacidad_kg: e.target.value })}
+                  min={1}
                 />
               </div>
               <div className="space-y-2">
@@ -155,6 +210,7 @@ const Tanques = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tanques.map((tanque: any) => {
             const finca = fincas.find((f: any) => f._id === tanque.finca_id);
+            console.log("🏷️ Renderizando tanque:", tanque.codigo_tanque, "Finca encontrada:", finca?.nombre_finca);
             return (
               <Card key={tanque._id} className="p-6 hover:shadow-xl transition-shadow">
                 <div className="space-y-4">
@@ -190,9 +246,9 @@ const Tanques = () => {
             );
           })}
         </div>
-       )}
-     </div>
-   );
+      )}
+    </div>
+  );
 };
 
 export default Tanques;

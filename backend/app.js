@@ -32,6 +32,15 @@ app.use(cors({
    allowedHeaders: ["Content-Type", "Authorization", "x-token"]
 }));
 
+// Middleware de logging para debug
+app.use((req, res, next) => {
+  console.log(`🌐 ${req.method} ${req.url} - ${new Date().toISOString()}`);
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log('📦 Body:', req.body);
+  }
+  next();
+});
+
 // Rutas
 app.use("/api/auth", authetication);
 app.use("/api/productores", productoresRoutes);

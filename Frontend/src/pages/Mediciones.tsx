@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
 import { apiFetch } from "@/api/http";
 import { API } from "@/api/endpoints";
+import { currentUserId } from "@/api/auth";
 
 const Mediciones = () => {
   const navigate = useNavigate();
@@ -27,8 +28,36 @@ const Mediciones = () => {
     const load = async () => {
       try {
         setLoadingLotes(true);
-        const lotesResp = await apiFetch<any[]>(API.lotes.list());
-        setLotes(lotesResp || []);
+        const userId = currentUserId();
+        
+        if (userId) {
+          // Usuario autenticado: cargar solo sus lotes
+          const [userFincas, allLotes, allTanques] = await Promise.all([
+            apiFetch<any[]>(API.fincas.byProductor(userId)),
+            apiFetch<any[]>(API.lotes.list()),
+            apiFetch<any[]>(API.tanques.list()),
+          ]);
+          
+          // Obtener IDs de fincas del usuario
+          const userFincaIds = (userFincas || []).map(f => f._id || f.id);
+          
+          // Filtrar tanques que pertenecen a las fincas del usuario
+          const userTanques = (allTanques || []).filter(t => 
+            userFincaIds.includes(t.finca_id?._id || t.finca_id)
+          );
+          const userTanqueIds = userTanques.map(t => t._id || t.id);
+          
+          // Filtrar lotes que pertenecen a los tanques del usuario
+          const userLotes = (allLotes || []).filter(l => 
+            userTanqueIds.includes(l.tanque_id?._id || l.tanque_id)
+          );
+          
+          setLotes(userLotes);
+        } else {
+          // Sin usuario autenticado: cargar todos los lotes (fallback)
+          const lotesResp = await apiFetch<any[]>(API.lotes.list());
+          setLotes(lotesResp || []);
+        }
       } catch (error: any) {
         toast("Error al cargar lotes", { description: error.message || "No se pudieron cargar los lotes" });
       } finally {

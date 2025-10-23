@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Package, Calendar, Plus, Edit, Trash2 } from "lucide-react";
+import { Package, Calendar, Thermometer, Plus, Edit, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,11 +9,14 @@ import { Link } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
 import { apiFetch } from "@/api/http";
 import { API } from "@/api/endpoints";
+import { currentUserId } from "@/api/auth";
 
 const Lotes = () => {
   const [lotes, setLotes] = useState<any[]>([]);
-  const [tanques, setTanques] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tanques, setTanques] = useState<any[]>([]);
+  const [fincas, setFincas] = useState<any[]>([]);
+
   const [newLote, setNewLote] = useState({
     tanque_id: "",
     variedad: "",
@@ -28,20 +31,51 @@ const Lotes = () => {
 
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [lotesResp, tanquesResp] = await Promise.all([
-        apiFetch(API.lotes.list()),
-        apiFetch(API.tanques.list()),
-      ]);
-      setLotes(lotesResp || []);
-      setTanques(tanquesResp || []);
+      const pid = currentUserId();
+      if (pid) {
+        // Usuario autenticado: cargar fincas -> tanques -> lotes del usuario
+        const fincasResp: any[] = await apiFetch(API.fincas.byProductor(pid));
+        setFincas(fincasResp || []);
+        
+        // Para cada finca del usuario, obtener sus tanques
+        const tanquesPromises = (fincasResp || []).map((finca: any) => 
+          apiFetch(API.tanques.byFinca(finca._id))
+        );
+        const tanquesLists = await Promise.allSettled(tanquesPromises);
+        const tanquesFlat: any[] = tanquesLists
+          .filter((r: any) => r.status === 'fulfilled')
+          .flatMap((r: any) => r.value || []);
+        setTanques(tanquesFlat || []);
+        
+        // Para cada tanque del usuario, obtener sus lotes
+        const lotesPromises = (tanquesFlat || []).map((tanque: any) => 
+          apiFetch(API.lotes.byTanque(tanque._id))
+        );
+        const lotesSettled = await Promise.allSettled(lotesPromises);
+        const lotesFlat = lotesSettled
+          .filter((r: any) => r.status === 'fulfilled')
+          .flatMap((r: any) => r.value || []);
+        setLotes(lotesFlat || []);
+      } else {
+        // Sin token: cargar todos (fallback)
+        const [lotesResp, tanquesResp, fincasResp] = await Promise.all([
+          apiFetch(API.lotes.list()),
+          apiFetch(API.tanques.list()),
+          apiFetch(API.fincas.list()),
+        ]);
+        setLotes(lotesResp || []);
+        setTanques(tanquesResp || []);
+        setFincas(fincasResp || []);
+      }
     } catch (error: any) {
-      toast("Error al cargar datos", { description: error.message || "No se pudieron cargar lotes/tanques" });
+      toast("Error al cargar datos", { 
+        description: error.message || "No se pudieron cargar lotes/tanques/fincas" 
+      });
     } finally {
       setLoading(false);
     }
@@ -49,15 +83,36 @@ const Lotes = () => {
 
   const handleAdd = async () => {
     try {
+      const horas = Number(newLote.horas_estimadas);
+      const cantidad = Number(newLote.cantidad_kg);
+      const premium = newLote.premium_porcentaje !== "" ? Number(newLote.premium_porcentaje) : 0;
+
+      if (!newLote.tanque_id || !newLote.variedad?.trim() || !newLote.fecha_inicio) {
+        toast("Datos incompletos", { description: "Selecciona tanque y completa variedad y fecha." });
+        return;
+      }
+      if (!Number.isFinite(horas) || horas <= 0) {
+        toast("Horas inválidas", { description: "Ingresa un número de horas mayor a 0." });
+        return;
+      }
+      if (!Number.isFinite(cantidad) || cantidad <= 0) {
+        toast("Cantidad inválida", { description: "Ingresa la cantidad en kg mayor a 0." });
+        return;
+      }
+      if (!(premium >= 0 && premium <= 100)) {
+        toast("Premium inválido", { description: "El porcentaje debe estar entre 0 y 100." });
+        return;
+      }
+
       const payload = {
         tanque_id: newLote.tanque_id,
-        variedad: newLote.variedad,
+        variedad: newLote.variedad.trim(),
         proceso: newLote.proceso,
         fecha_inicio: newLote.fecha_inicio,
-        horas_estimadas: Number(newLote.horas_estimadas) || 0,
-        cantidad_kg: Number(newLote.cantidad_kg) || 0,
+        horas_estimadas: horas,
+        cantidad_kg: cantidad,
         estado: newLote.estado,
-        premium_porcentaje: Number(newLote.premium_porcentaje) || 0,
+        premium_porcentaje: premium,
       };
 
       await apiFetch(API.lotes.create(), { method: "POST", body: payload });
@@ -115,7 +170,7 @@ const Lotes = () => {
               <div className="space-y-2">
                 <Label>Tanque</Label>
                 <select
-                  className="w-full border rounded-md p-2 bg-background"
+                  className="w-full border rounded-md p-2 bg-white"
                   value={newLote.tanque_id}
                   onChange={(e) => setNewLote({ ...newLote, tanque_id: e.target.value })}
                 >
@@ -138,7 +193,7 @@ const Lotes = () => {
               <div className="space-y-2">
                 <Label>Proceso</Label>
                 <select
-                  className="w-full border rounded-md p-2 bg-background"
+                  className="w-full border rounded-md p-2 bg-white"
                   value={newLote.proceso}
                   onChange={(e) => setNewLote({ ...newLote, proceso: e.target.value })}
                 >

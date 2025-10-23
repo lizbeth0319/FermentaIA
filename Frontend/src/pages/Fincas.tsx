@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
 import { apiFetch } from "@/api/http";
 import { API } from "@/api/endpoints";
+import { currentUserId } from "@/api/auth";
 
 const Fincas = () => {
   const [fincas, setFincas] = useState<any[]>([]);
@@ -20,6 +21,14 @@ const Fincas = () => {
   });
   const [open, setOpen] = useState(false);
 
+  // Normaliza CIIU a exactamente 3 dígitos
+  const normalizeCIIU = (s: string) => {
+    const digits = (s || "").replace(/\D/g, "");
+    if (digits.length === 4 && digits.startsWith("0")) return digits.slice(1);
+    if (digits.length > 3) return digits.slice(0, 3);
+    return digits.padStart(3, "0");
+  };
+
   useEffect(() => {
     loadFincas();
   }, []);
@@ -27,8 +36,25 @@ const Fincas = () => {
   const loadFincas = async () => {
     try {
       setLoading(true);
-      const data = await apiFetch(API.fincas.list());
-      setFincas(data || []);
+      const pid = currentUserId();
+      if (pid) {
+        // Usuario autenticado: cargar solo sus fincas
+        try {
+          const data = await apiFetch(API.fincas.byProductor(pid));
+          setFincas(Array.isArray(data) ? data : []);
+        } catch (err: any) {
+          // Backend devuelve 404 cuando no hay fincas: tratar como lista vacía
+          if (err?.status === 404) {
+            setFincas([]);
+          } else {
+            throw err;
+          }
+        }
+      } else {
+        // Sin token: cargar todas (fallback)
+        const data = await apiFetch(API.fincas.list());
+        setFincas(Array.isArray(data) ? data : []);
+      }
     } catch (error: any) {
       toast("Error al cargar fincas", { 
         description: error.message || "No se pudieron cargar las fincas" 
@@ -40,15 +66,45 @@ const Fincas = () => {
 
   const handleAdd = async () => {
     try {
+      const pid = currentUserId();
+      if (!pid) {
+        toast("No autenticado", { description: "Inicia sesión para crear fincas" });
+        return;
+      }
+
+      const required = {
+        nombre: newFinca.nombre?.trim(),
+        departamento: newFinca.departamento?.trim(),
+        municipio: newFinca.municipio?.trim(),
+        vereda: newFinca.vereda?.trim(),
+        direccion: newFinca.direccion?.trim(),
+        nit: newFinca.nit?.trim(),
+        ciiu: newFinca.ciiu?.trim(),
+      } as const;
+
+      if (!required.nombre || !required.departamento || !required.municipio || !required.vereda || !required.direccion || !required.nit || !required.ciiu) {
+        toast("Campos requeridos", { description: "Completa nombre, departamento, municipio, vereda, dirección, NIT y CIIU." });
+        return;
+      }
+
+      const alt = Number(newFinca.altitud);
+      if (!Number.isFinite(alt) || alt < 0 || alt > 5000) {
+        toast("Altitud inválida", { description: "Ingresa un valor entre 0 y 5000 m.s.n.m." });
+        return;
+      }
+
+      const ciiuNorm = normalizeCIIU(newFinca.ciiu);
+
       const fincaData = {
-        nombre_finca: newFinca.nombre || "Nueva Finca",
-        departamento: newFinca.departamento || "",
-        municipio: newFinca.municipio || "",
-        vereda: newFinca.vereda || "",
-        direccion: newFinca.direccion || "",
-        altitud_ms_nm: Number(newFinca.altitud) || 0,
-        nit: newFinca.nit || "",
-        ciiu: newFinca.ciiu || ""
+        productor_id: pid,
+        nombre_finca: required.nombre,
+        departamento: required.departamento,
+        municipio: required.municipio,
+        vereda: required.vereda,
+        direccion: required.direccion,
+        altitud_ms_nm: alt,
+        nit: required.nit,
+        ciiu: ciiuNorm
       };
       
       await apiFetch(API.fincas.create(), {
@@ -170,9 +226,13 @@ const Fincas = () => {
                 <div className="space-y-2">
                   <Label>CIIU</Label>
                   <Input
-                    placeholder="Ej: 0111"
+                    placeholder="Ej: 141"
+                    maxLength={3}
                     value={newFinca.ciiu}
-                    onChange={(e) => setNewFinca({...newFinca, ciiu: e.target.value})}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 3);
+                      setNewFinca({ ...newFinca, ciiu: digits });
+                    }}
                   />
                 </div>
               </div>
@@ -190,43 +250,50 @@ const Fincas = () => {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {fincas.map((finca) => (
-            <Card key={finca._id} className="p-6 hover:shadow-xl transition-shadow">
-              <div className="space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="bg-primary/10 p-3 rounded-xl">
-                    <Coffee className="w-8 h-8 text-primary" />
+        fincas.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Aún no tienes fincas registradas.</p>
+            <Button className="mt-4" onClick={() => setOpen(true)}>Registrar primera finca</Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {fincas.map((finca) => (
+              <Card key={finca._id} className="p-6 hover:shadow-xl transition-shadow">
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="bg-primary/10 p-3 rounded-xl">
+                      <Coffee className="w-8 h-8 text-primary" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="icon" variant="ghost" asChild>
+                        <Link to={`/fincas/${finca._id}/editar`} aria-label="Editar finca">
+                          <Edit className="w-4 h-4" />
+                        </Link>
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => handleDelete(finca._id)}>
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="icon" variant="ghost" asChild>
-                      <Link to={`/fincas/${finca._id}/editar`} aria-label="Editar finca">
-                        <Edit className="w-4 h-4" />
-                      </Link>
-                    </Button>
-                    <Button size="icon" variant="ghost" onClick={() => handleDelete(finca._id)}>
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
+                  
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground">{finca.nombre_finca}</h3>
+                    <div className="flex items-center gap-2 text-muted-foreground mt-2">
+                      <MapPin className="w-4 h-4" />
+                      <span>{finca.municipio}, {finca.departamento}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {finca.vereda && `${finca.vereda} - `}{finca.direccion}
+                    </p>
+                    <p className="text-lg font-semibold text-primary mt-3">
+                      Altitud: {finca.altitud_ms_nm} m.s.n.m
+                    </p>
                   </div>
                 </div>
-                
-                <div>
-                  <h3 className="text-xl font-bold text-foreground">{finca.nombre_finca}</h3>
-                  <div className="flex items-center gap-2 text-muted-foreground mt-2">
-                    <MapPin className="w-4 h-4" />
-                    <span>{finca.municipio}, {finca.departamento}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {finca.vereda && `${finca.vereda} - `}{finca.direccion}
-                  </p>
-                  <p className="text-lg font-semibold text-primary mt-3">
-                    Altitud: {finca.altitud_ms_nm} m.s.n.m
-                  </p>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        )
       )}
     </div>
   );
