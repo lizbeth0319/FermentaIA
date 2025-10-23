@@ -33,102 +33,50 @@ interface Message {
 
 export const FloatingAIWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      type: "ai",
-      content:
-        "¡Hola! Soy Fermenta Bot, tu guía en fermentación del café. ¿En qué puedo ayudarte hoy?",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [response, setResponse] = useState("");
 
-  const generateAIResponse = (userInput: string) => {
-    const input = userInput.toLowerCase();
-
-    if (input.includes("emergencia") || input.includes("ayuda") || input.includes("socorro")) {
-      return "🚨 Detecté una situación de emergencia. He activado el protocolo de respuesta rápida. ¿Necesitas que contacte servicios de emergencia o prefieres reportar el incidente primero?";
-    }
-
-    if (input.includes("ubicación") || input.includes("localización") || input.includes("donde")) {
-      return "📍 Puedo ayudarte con información de ubicación. Tengo acceso a mapas interactivos y puntos de seguridad cercanos. ¿Necesitas localizar algún lugar específico o reportar tu ubicación actual?";
-    }
-
-    if (input.includes("contacto") || input.includes("persona") || input.includes("familiar")) {
-      return "👥 Te ayudo con la gestión de contactos de emergencia. Puedo ayudarte a configurar contactos de confianza, enviar alertas automáticas o buscar personas en tu red de seguridad.";
-    }
-
-    if (input.includes("reporte") || input.includes("incidente") || input.includes("problema")) {
-      return "📋 Puedo activar un formulario de reporte. Indícame el tipo de incidente y procedo.";
-    }
-
-    if (input.includes("seguridad") || input.includes("protección") || input.includes("riesgo")) {
-      return "🛡️ Analizando tu consulta de seguridad... He identificado varios protocolos aplicables. ¿Te encuentras en una situación de riesgo actualmente?";
-    }
-
-    if (input.includes("configuración") || input.includes("ajustes") || input.includes("settings")) {
-      return "⚙️ Puedo ajustar notificaciones, contactos de emergencia, alertas y tu perfil de seguridad. ¿Qué deseas configurar?";
-    }
-
-    if (input.includes("recursos") || input.includes("información") || input.includes("guía")) {
-      return "📚 Tengo guías de autoprotección, números de emergencia y protocolos de evacuación. ¿Qué recurso buscas?";
-    }
-
-    if (input.includes("hola") || input.includes("hi") || input.includes("buenos") || input.includes("buenas")) {
-      return "¡Hola! ¿Cómo puedo ayudarte hoy?";
-    }
-
-    if (["sí", "si", "yes", "ok", "vale"].includes(input)) {
-      return "✅ Perfecto. Procedo con la acción solicitada. ¿Algo más en lo que pueda asistirte?";
-    }
-
-    if (["no", "nope", "negativo"].includes(input)) {
-      return "❌ Entendido. Si cambias de opinión, estaré aquí para ayudarte.";
-    }
-
-    if (input.includes("gracias") || input.includes("thanks") || input.includes("thank you")) {
-      return "😊 ¡De nada! Estoy disponible 24/7. ¡Mantente seguro!";
-    }
-
-    if (input.includes("perfecto") || input.includes("excelente") || input.includes("genial") || input.includes("bien")) {
-      return "🎉 ¡Me alegra saberlo! Si necesitas más asistencia, aquí estoy.";
-    }
-
-    return "Puedo ayudarte con análisis de riesgo, contactos de emergencia, reportes y más. ¿Qué necesitas?";
-  };
-
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     const currentInput = inputMessage.trim();
     if (!currentInput) return;
 
-    const userMessage: Message = { id: messages.length + 1, type: "user", content: currentInput };
+    // Agregar mensaje del usuario
+    const userMessage: Message = { 
+      id: Date.now(), 
+      type: "user", 
+      content: currentInput 
+    };
     setMessages((prev) => [...prev, userMessage]);
     setInputMessage("");
     setIsTyping(true);
 
-    setTimeout(() => {
-      const aiMessage: Message = {
-        id: messages.length + 2,
-        type: "ai",
-        content: generateAIResponse(currentInput),
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-      setIsTyping(false);
-    }, Math.random() * 1500 + 800);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
     try {
+      // Llamar al endpoint real de IA con n8n
       const result = await apiFetch(API.ai.chat(), {
         method: "POST",
-        body: { mensaje: inputMessage },
+        body: { mensaje: currentInput },
       });
-      setResponse(result.response);
+
+      // Agregar respuesta de la IA
+      const aiMessage: Message = {
+        id: Date.now() + 1,
+        type: "ai",
+        content: result.response || "Lo siento, no pude procesar tu consulta en este momento.",
+      };
+      setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
       console.error("Error al procesar mensaje:", error);
+      
+      // Mensaje de error amigable
+      const errorMessage: Message = {
+        id: Date.now() + 1,
+        type: "ai",
+        content: "Disculpa, estoy experimentando dificultades técnicas. Por favor, intenta de nuevo en unos momentos.",
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
     }
   };
 
@@ -205,15 +153,20 @@ export const FloatingAIWidget = () => {
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSendMessage();
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
                   }}
-                  placeholder="Escribe tu consulta..."
-                  className="flex-1 rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                  placeholder="Escribe tu consulta sobre fermentación..."
+                  className="flex-1 rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 disabled:opacity-50"
+                  disabled={isTyping}
                 />
                 <button
-                  className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-slate-200 hover:bg-slate-50"
+                  className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-slate-200 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={handleSendMessage}
-                  aria-label="Enviar"
+                  disabled={isTyping || !inputMessage.trim()}
+                  aria-label="Enviar mensaje"
                 >
                   <MessageCircle className="h-4 w-4" />
                 </button>
