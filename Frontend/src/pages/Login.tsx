@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Coffee } from "lucide-react";
+// import { Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "@/components/ui/sonner";
 import { login } from "@/api/auth";
+import backgroundImage from "@/assets/fondo.png";
+import logo from "@/assets/LogoFermentaIA.png";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -32,11 +34,14 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen grid place-items-center bg-background px-4 py-8">
-      <Card className="w-full max-w-md rounded-2xl p-8 md:p-10 shadow-lg border bg-card">
+    <div
+      className="min-h-screen grid place-items-center px-4 py-8 bg-cover bg-center"
+      style={{ backgroundImage: `url(${backgroundImage})` }}
+    >
+      <Card className="w-full max-w-md rounded-2xl p-8 md:p-10 shadow-xl border bg-white">
         <div className="text-center space-y-2">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/15">
-            <Coffee className="h-8 w-8 text-primary" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-white overflow-hidden ring-1 ring-primary/20">
+            <img src={logo} alt="Fermenta IA" className="h-12 w-12 object-contain" />
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Fermenta IA</h1>
           <p className="text-sm text-muted-foreground">Gestión inteligente de fermentación</p>
@@ -72,7 +77,7 @@ const Login = () => {
           <Button 
             type="submit" 
             disabled={loading}
-            className="w-full h-11 text-base bg-primary text-primary-foreground hover:bg-primary/90"
+            className="w-full h-11 text-base bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-150 shadow-sm hover:shadow-md active:translate-y-px focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
           </Button>

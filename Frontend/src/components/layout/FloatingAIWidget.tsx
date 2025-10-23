@@ -89,7 +89,7 @@ export const FloatingAIWidget = () => {
       <div className="fixed bottom-6 right-6 z-50">
         <button
           aria-label="Abrir Fermenta Bot"
-          className="h-20 w-20 rounded-full bg-transparent border-2 border-blue-500/20 shadow-md transition-transform hover:scale-105 p-2 relative"
+          className="h-20 w-20 rounded-full bg-white/90 backdrop-blur border border-primary/20 shadow-lg transition-all hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-primary/30 p-2 relative"
           onClick={() => setIsOpen((v) => !v)}
         >
           <div className="w-full h-full flex items-center justify-center relative">
@@ -117,7 +117,7 @@ export const FloatingAIWidget = () => {
                   <p className="text-xs text-slate-500 m-0">Tu guía en fermentación del café</p>
                 </div>
               </div>
-              <button className="p-1 rounded hover:bg-black/5" onClick={() => setIsOpen(false)} aria-label="Cerrar chat">
+              <button className="p-1 rounded hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-primary/30" onClick={() => setIsOpen(false)} aria-label="Cerrar chat">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -159,11 +159,11 @@ export const FloatingAIWidget = () => {
                     }
                   }}
                   placeholder="Escribe tu consulta sobre fermentación..."
-                  className="flex-1 rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 disabled:opacity-50"
+                  className="flex-1 rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
                   disabled={isTyping}
                 />
                 <button
-                  className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-slate-200 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-9 w-9 inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow-md active:translate-y-px focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={handleSendMessage}
                   disabled={isTyping || !inputMessage.trim()}
                   aria-label="Enviar mensaje"
