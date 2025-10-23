@@ -1,21 +1,13 @@
-import { User, Moon, Sun, LogOut, Settings } from "lucide-react";
+import { User, LogOut, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { useState } from "react";
 
 const MiCuenta = () => {
   const navigate = useNavigate();
-  const [darkMode, setDarkMode] = useState(false);
 
   const handleLogout = () => {
     navigate("/");
-  };
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle("dark");
   };
 
   return (
@@ -45,18 +37,6 @@ const MiCuenta = () => {
             <Settings className="w-5 h-5 mr-3" />
             Mis Datos
           </Button>
-
-          <Card className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {darkMode ? (
-                <Moon className="w-5 h-5 text-foreground" />
-              ) : (
-                <Sun className="w-5 h-5 text-foreground" />
-              )}
-              <span className="text-lg font-medium">Modo Oscuro</span>
-            </div>
-            <Switch checked={darkMode} onCheckedChange={toggleDarkMode} />
-          </Card>
 
           <Button 
             variant="destructive" 

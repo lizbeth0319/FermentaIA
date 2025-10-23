@@ -66,7 +66,7 @@ const Login = () => {
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
+              placeholder="Escribe tu contraseña"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -76,8 +76,10 @@ const Login = () => {
 
           <Button 
             type="submit" 
+            variant="outline"
+            size="lg"
             disabled={loading}
-            className="w-full h-11 text-base bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-150 shadow-sm hover:shadow-md active:translate-y-px focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full h-12 text-base rounded-lg bg-white text-foreground border border-gray-300 shadow-md hover:shadow-lg hover:bg-gray-100 hover:border-gray-400 transition-colors active:translate-y-px focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800 dark:hover:border-neutral-600"
           >
             {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
           </Button>
