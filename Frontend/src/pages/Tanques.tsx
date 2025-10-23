@@ -32,20 +32,31 @@ const Tanques = () => {
     try {
       setLoading(true);
       const pid = currentUserId();
+      console.log("🔍 loadData iniciado - Usuario ID:", pid);
+      console.log("🔍 Tipo de usuario ID:", typeof pid);
+      
       if (pid) {
         // Usuario autenticado: cargar fincas del usuario y sus tanques
         try {
-          const fincasResp: any[] = await apiFetch(API.fincas.byProductor(pid));
+          const fincasUrl = API.fincas.byProductor(pid);
+          console.log("🌐 URL para fincas:", fincasUrl);
+          const fincasResp: any[] = await apiFetch(fincasUrl);
+          console.log("🏠 Fincas cargadas:", fincasResp);
           setFincas(fincasResp || []);
 
           // Para cada finca del usuario, obtener sus tanques
-          const tanquesPromises = (fincasResp || []).map((finca: any) => 
-            apiFetch(API.tanques.byFinca(finca._id))
-          );
+          const tanquesPromises = (fincasResp || []).map((finca: any) => {
+            const tanquesUrl = API.tanques.byFinca(finca._id);
+            console.log("🔄 Cargando tanques para finca:", finca._id, finca.nombre_finca, "URL:", tanquesUrl);
+            return apiFetch(tanquesUrl);
+          });
           const tanquesLists = await Promise.all(tanquesPromises);
+          console.log("📦 Listas de tanques por finca:", tanquesLists);
           const tanquesFlat = tanquesLists.flat();
+          console.log("🚰 Tanques finales (flat):", tanquesFlat);
           setTanques(tanquesFlat || []);
         } catch (err: any) {
+          console.log("❌ Error cargando fincas/tanques:", err);
           // Si no hay fincas (404), dejar vacío sin error visual
           if (err?.status === 404) {
             setFincas([]);
@@ -60,10 +71,12 @@ const Tanques = () => {
           apiFetch(API.tanques.list()),
           apiFetch(API.fincas.list()),
         ]);
+        console.log("🌐 Modo sin autenticación - Tanques:", tanquesResp, "Fincas:", fincasResp);
         setTanques(tanquesResp || []);
         setFincas(fincasResp || []);
       }
     } catch (error: any) {
+      console.error("💥 Error en loadData:", error);
       toast("Error al cargar datos", { 
         description: error.message || "No se pudieron cargar tanques/fincas" 
       });
@@ -92,7 +105,8 @@ const Tanques = () => {
 
       setNewTanque({ finca_id: "", codigo_tanque: "", capacidad_kg: "", material: "" });
       setOpen(false);
-      loadData(); // recargar lista
+      
+      await loadData(); // recargar lista
     } catch (error: any) {
       toast("Error al crear tanque", { description: error.message || "No se pudo crear el tanque" });
     }
@@ -111,6 +125,14 @@ const Tanques = () => {
       toast("Error al eliminar tanque", { description: error.message || "No se pudo eliminar el tanque" });
     }
   };
+
+  console.log("🎨 Renderizando tanques - Estado actual:", { 
+    tanquesLength: tanques.length, 
+    tanques: tanques,
+    fincasLength: fincas.length,
+    fincas: fincas,
+    loading: loading 
+  });
 
   return (
     <div className="p-6 space-y-6">
@@ -188,6 +210,7 @@ const Tanques = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tanques.map((tanque: any) => {
             const finca = fincas.find((f: any) => f._id === tanque.finca_id);
+            console.log("🏷️ Renderizando tanque:", tanque.codigo_tanque, "Finca encontrada:", finca?.nombre_finca);
             return (
               <Card key={tanque._id} className="p-6 hover:shadow-xl transition-shadow">
                 <div className="space-y-4">
@@ -223,9 +246,9 @@ const Tanques = () => {
             );
           })}
         </div>
-       )}
-     </div>
-   );
+      )}
+    </div>
+  );
 };
 
 export default Tanques;

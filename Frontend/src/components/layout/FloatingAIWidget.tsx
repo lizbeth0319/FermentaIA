@@ -194,23 +194,23 @@ export const FloatingAIWidget = () => {
                 {isTyping && (
                   <div className="flex justify-start">
                     <div className={`${bubbleBase} bg-slate-100 text-slate-600 italic opacity-80`}>Fermenta Bot está escribiendo…</div>
-                <button>
-                  className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-slate-200 hover:bg-slate-50"
-                  onClick={handleSendMessage}
-                  aria-label="Enviar"
-                > Input */}
-                  <MessageCircle className="h-4 w-4" />
-                </button>
-              </div>pe="text"
-            </div>value={inputMessage}
-          </div>  onChange={(e) => setInputMessage(e.target.value)}
-        </div>    onKeyDown={(e) => {
-      )}            if (e.key === "Enter") handleSendMessage();
-    </>           }}
-  );              placeholder="Escribe tu consulta..."
-};                className="flex-1 rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                  </div>
+                )}
+              </div>
+
+              {/* Input */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSendMessage();
+                  }}
+                  placeholder="Escribe tu consulta..."
+                  className="flex-1 rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
                 />
-export default FloatingAIWidget;
+                <button
                   className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-slate-200 hover:bg-slate-50"
                   onClick={handleSendMessage}
                   aria-label="Enviar"

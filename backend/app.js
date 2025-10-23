@@ -20,16 +20,20 @@ dotenv.config();
 const app = express();
 
 app.use(express.json());
-<<<<<<< HEAD
 
-app.use(cors());
-
-=======
->>>>>>> 181e80059b2b55282d1c8eb66e4bd0ee5a16c716
 app.use(cors({
   origin: ["http://localhost:8080", "http://localhost:8081"],
   credentials: true,
 }));
+
+// Middleware de logging para debug
+app.use((req, res, next) => {
+  console.log(`🌐 ${req.method} ${req.url} - ${new Date().toISOString()}`);
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log('📦 Body:', req.body);
+  }
+  next();
+});
 
 // Rutas
 app.use("/api/auth", authetication);

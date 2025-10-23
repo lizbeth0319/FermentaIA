@@ -1,4 +1,5 @@
 import Tanque from "../models/Tanque.js";
+import mongoose from "mongoose";
 // Obtener todos los tanques
 export const getAllTanques = async (req, res) => {
   try {
@@ -12,9 +13,23 @@ export const getAllTanques = async (req, res) => {
 export const getTanquesByFinca = async (req, res) => {
   const { fincaId } = req.params;
   try {
-    const tanques = await Tanque.find({ finca: fincaId });
+    console.log('🔍 getTanquesByFinca - fincaId recibido:', fincaId);
+    console.log('🔍 Tipo de fincaId:', typeof fincaId);
+    
+    // Buscar todos los tanques primero para debug
+    const todosTanques = await Tanque.find();
+    console.log('🔍 Todos los tanques en BD:', todosTanques);
+    
+    const tanques = await Tanque.find({ finca_id: fincaId });
+    console.log('🔍 Tanques encontrados para finca', fincaId, ':', tanques);
+    
+    // Prueba adicional: buscar como ObjectId
+    const tanquesObjectId = await Tanque.find({ finca_id: new mongoose.Types.ObjectId(fincaId) });
+    console.log('🔍 Tanques encontrados con ObjectId:', tanquesObjectId);
+    
     res.status(200).json(tanques);
   } catch (error) {
+    console.error('❌ Error en getTanquesByFinca:', error);
     res
       .status(500)
       .json({ message: "Error al obtener los tanques por finca", error });
@@ -39,8 +54,9 @@ export const getTanqueById = async (req, res) => {
 // Crear nuevo tanque
 export const createTanque = async (req, res) => {
   try {
-     console.log('Datos recibidos:', req.body); // Log para debug
+     console.log('🔍 createTanque - Datos recibidos:', req.body);
     const { finca_id, codigo_tanque, capacidad_kg, material } = req.body;
+    console.log('🔍 finca_id extraído:', finca_id, 'tipo:', typeof finca_id);
 
     const nuevoTanque = new Tanque({
       finca_id,
@@ -48,8 +64,10 @@ export const createTanque = async (req, res) => {
       capacidad_kg,
       material,
     });
+    console.log('🔍 Tanque antes de guardar:', nuevoTanque);
 
     const tanqueGuardado = await nuevoTanque.save();
+    console.log('🔍 Tanque guardado en BD:', tanqueGuardado);
     await tanqueGuardado.populate("finca_id");
 
     const tanqueResponse = {
