@@ -170,7 +170,7 @@ const Lotes = () => {
               <div className="space-y-2">
                 <Label>Tanque</Label>
                 <select
-                  className="w-full border rounded-md p-2 bg-background"
+                  className="w-full border rounded-md p-2 bg-white"
                   value={newLote.tanque_id}
                   onChange={(e) => setNewLote({ ...newLote, tanque_id: e.target.value })}
                 >
@@ -193,7 +193,7 @@ const Lotes = () => {
               <div className="space-y-2">
                 <Label>Proceso</Label>
                 <select
-                  className="w-full border rounded-md p-2 bg-background"
+                  className="w-full border rounded-md p-2 bg-white"
                   value={newLote.proceso}
                   onChange={(e) => setNewLote({ ...newLote, proceso: e.target.value })}
                 >

@@ -165,7 +165,7 @@ const Tanques = () => {
               <div className="space-y-2">
                 <Label>Finca</Label>
                 <select
-                  className="w-full border rounded-md px-3 py-2 bg-background"
+                  className="w-full border rounded-md px-3 py-2 bg-white"
                   value={newTanque.finca_id}
                   onChange={(e) => setNewTanque({ ...newTanque, finca_id: e.target.value })}
                 >
