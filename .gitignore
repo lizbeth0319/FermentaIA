@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Root ignores for secrets and local envs
 
 # Environment files (root)
@@ -29,3 +30,7 @@ Thumbs.db
 # Archives
 *.rar
 *.zip
+=======
+.env
+node_modules
+>>>>>>> 27ce32b7edc28cab217110e2223f89e19ce31649
