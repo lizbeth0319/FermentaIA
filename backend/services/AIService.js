@@ -1,108 +1,73 @@
-import axios from 'axios';
-import aiConfig from '../config/ai.config.js';
+import PerfilIdeal from '../models/PerfilIdeal.js';
 
 class AIService {
   constructor() {
-    // Configuración para n8n webhooks
-    this.n8nEndpoints = aiConfig.flowEndpoints;
-    
-    // Configuración para OpenAI (fallback)
-    this.openaiApiKey = process.env.OPENAI_API_KEY;
-    this.openaiBaseUrl = 'https://api.openai.com/v1';
-    
-    // Configuración para AWS Bedrock (si se necesita en el futuro)
-    this.awsRegion = process.env.AWS_REGION || 'us-east-1';
-    
     // Memoria simple para el chat (en producción usar Redis o base de datos)
     this.chatMemory = new Map();
     this.maxMemoryMessages = 20;
+
+    // Base de conocimiento simple para preguntas frecuentes del sitio y fermentación
+    this.faq = [
+      {
+        keywords: ['registrar finca', 'registro finca', 'crear finca', 'agregar finca', 'como registro una finca'],
+        answer: `Para registrar una finca ve a "Fincas" > "Nueva Finca" y completa nombre, ubicación y productor. Luego podrás crear tanques y lotes vinculados a esa finca.`
+      },
+      {
+        keywords: ['registrar lote', 'registro lote', 'crear lote', 'como registro un lote'],
+        answer: `En "Lotes" selecciona el tanque y crea un nuevo lote indicando variedad y proceso (Lavado, Honey, Natural).`
+      },
+      {
+        keywords: ['registrar medicion', 'registro medicion', 'agregar medicion', 'medición', 'como registro una medicion'],
+        answer: `Desde "Mediciones" elige el lote, fase (inicio, medio, fin) y registra pH y temperatura con observaciones.`
+      },
+      {
+        keywords: ['ph ideal', 'pH ideal', 'cual es el ph ideal'],
+        answer: `En fermentación de café el pH suele bajar con el tiempo. Un rango comúnmente aceptado es entre 3.8 y 4.5 según variedad, proceso y fase.`
+      },
+      {
+        keywords: ['temperatura ideal', 'temperatura fermentacion', 'cual es la temperatura ideal'],
+        answer: `La temperatura estable favorece una fermentación pareja. Rango general recomendado 18–25 °C; consulta el perfil ideal de tu variedad y proceso.`
+      },
+      {
+        keywords: ['comparativas', 'rangos ideales', 'perfil ideal', 'donde veo comparativas'],
+        answer: `En la página "Comparativas" se muestran los rangos ideales del perfil (pH y °C) versus tus mediciones actuales.`
+      },
+      {
+        keywords: ['ayuda', 'como usar', 'navegar', 'hola'],
+        answer: `Usa el menú lateral para acceder a Fincas, Tanques, Lotes y Mediciones. Crea primero la finca, luego tanques, después lotes y por último registra las mediciones.`
+      }
+    ];
   }
 
   async processChatRequest(input, sessionId = 'default') {
     try {
-      // Intentar usar n8n webhook primero
-      try {
-        const response = await axios.post(this.n8nEndpoints.chat, {
-          chatInput: input,
-          sessionId: sessionId
-        }, {
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          timeout: 15000 // 15 segundos timeout para IA
-        });
+      const sanitize = (t) => String(t ?? '')
+        .replace(/undefined/gi, '')
+        .replace(/\s+\./g, '. ')
+        .replace(/\s{2,}/g, ' ')
+        .replace(/\bPedo\b/gi, 'Puedo')
+        .replace(/\bPra\b/gi, 'Para')
+        .trim();
+      const normalize = (s) => String(s || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      const text = normalize(input);
+      const containsAll = (kw) => {
+        const normKw = normalize(kw);
+        const tokens = normKw.split(' ').filter(Boolean);
+        return tokens.every(t => text.includes(t));
+      };
+      const match = this.faq.find(f => f.keywords.some(containsAll));
+      const aiResponse = sanitize(match
+        ? match.answer
+        : 'Puedo ayudarte con el uso de la página (fincas, lotes, mediciones) y dudas básicas de fermentación (pH y temperatura). ¿Qué necesitas hacer ahora?');
 
-        if (response.data && (response.data.output || response.data.response)) {
-          const aiResponse = response.data.output || response.data.response;
-          // Actualizar historial de chat
-          this.updateChatHistory(sessionId, input, aiResponse);
-          return { response: aiResponse };
-        }
-      } catch (n8nError) {
-        console.log('n8n webhook no disponible, usando fallback:', n8nError.message);
-      }
-
-      // Fallback: Si n8n no está disponible, usar OpenAI directamente
-      if (!this.openaiApiKey || this.openaiApiKey === 'sk-your-openai-api-key-here') {
-        return { 
-          response: "Hola, soy tu asistente de FermentaIA. Actualmente estoy en modo offline, pero puedo ayudarte con información básica sobre fermentación de café. ¿En qué puedo ayudarte?" 
-        };
-      }
-
-      // Sistema de prompt del agente de ayuda
-      const systemPrompt = `Eres un asistente de FermentaIA. Tu tarea es ayudar a los caficultores de manera directa, precisa y relevante, sin inventar datos ni dar respuestas fuera de contexto.
-
-Tono y estilo:
-- Responde de manera breve y directa, sin detalles innecesarios.
-- Evita cualquier tipo de invención de datos. Solo proporciona lo que el usuario ha solicitado o lo que está relacionado con su pregunta.
-
-Altitud:
-Si el usuario pregunta por la altitud de su finca o vereda, responde solo si es posible obtener esa información. Si no tienes acceso a los datos, responde directamente con una solicitud para verificar la dirección.
-Ejemplo: "Lo siento, no pude obtener la altitud. ¿Puedes verificar la dirección de tu finca?"
-
-CIIU:
-Si el usuario menciona su actividad económica, consulta el código CIIU correspondiente, pero solo si esa información es proporcionada por el usuario. No inventes códigos ni detalles.
-Ejemplo: "El código CIIU para cultivar café es 01110."
-
-Registrar finca, lote o medición:
-Si el usuario menciona que quiere registrar su finca, responde pidiendo directamente los datos necesarios, como nombre de la finca, actividad económica, etc.
-Ejemplo: "Claro, para registrar tu finca necesito el nombre, la actividad económica y el NIT. ¿Puedes proporcionarlos?"
-
-Evitar invención de información:
-- No inventes datos que el usuario no ha solicitado. Si no tienes información relevante, sé directo y pide lo necesario.
-- Evita respuestas largas o detalles que no son relevantes para lo que el usuario pide.
-
-Sin conexión a internet:
-Recordar que FermentaIA funciona en modo offline. Los datos se guardan localmente y se sincronizan cuando haya acceso a internet.`;
-
-      // Obtener historial de conversación
-      const messages = this.getChatHistory(sessionId);
-      
-      // Agregar mensaje del usuario
-      messages.push({ role: 'user', content: input });
-
-      // Llamada a OpenAI
-      const response = await axios.post(`${this.openaiBaseUrl}/chat/completions`, {
-        model: 'gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...messages
-        ],
-        max_tokens: 500,
-        temperature: 0.7
-      }, {
-        headers: {
-          'Authorization': `Bearer ${this.openaiApiKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const aiResponse = response.data.choices[0].message.content;
-      
-      // Guardar en memoria
       this.updateChatHistory(sessionId, input, aiResponse);
-
-      return { message: aiResponse };
+      return { response: aiResponse };
     } catch (error) {
       console.error('Error en chat IA:', error);
       
@@ -115,80 +80,37 @@ Recordar que FermentaIA funciona en modo offline. Los datos se guardan localment
 
   async processRecomendacion(medicionData) {
     try {
-      // Intentar usar n8n webhook primero
-      try {
-        const response = await axios.post(this.n8nEndpoints.recomendacion, {
-          lote: {
-            variedad: medicionData.lote?.variedad || 'no especificada',
-            proceso: medicionData.lote?.proceso || 'no especificado',
-            estado: medicionData.lote?.estado || 'no especificado'
-          },
-          medicion: {
-            ph: medicionData.medicion?.ph || 'no medido',
-            temperatura_c: medicionData.medicion?.temperatura_c || 'no medida',
-            timestamp: medicionData.medicion?.timestamp || 'no registrada'
-          },
-          tanque: {
-            material: medicionData.tanque?.material || 'no especificado'
-          }
-        }, {
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          timeout: 15000 // 15 segundos timeout para IA
-        });
+      const variedad = medicionData?.lote?.variedad;
+      const proceso = medicionData?.lote?.proceso;
+      const fase = medicionData?.lote?.estado || medicionData?.fase;
+      const ph = Number(medicionData?.medicion?.ph ?? medicionData?.ph ?? NaN);
+      const temperatura = Number(
+        medicionData?.medicion?.temperatura_c ?? medicionData?.temperatura_c ?? medicionData?.temperatura ?? NaN
+      );
 
-        if (response.data && (response.data.output || response.data.recomendacion)) {
-          const recomendacion = response.data.output || response.data.recomendacion;
-          return { recomendacion };
+      let consejo = 'El proceso va por buen camino; mantén condiciones estables y mide con regularidad.';
+
+      if (variedad && proceso && fase) {
+        const perfil = await PerfilIdeal.findOne({ variedad, proceso, fase });
+        const ranges = perfil
+          ? { ph_min: perfil.ph_min, ph_max: perfil.ph_max, temp_min_c: perfil.temp_min_c, temp_max_c: perfil.temp_max_c }
+          : { ph_min: 3.8, ph_max: 4.5, temp_min_c: 18, temp_max_c: 25 };
+
+        const enRangoPh = !isNaN(ph) && ph >= ranges.ph_min && ph <= ranges.ph_max;
+        const enRangoTemp = !isNaN(temperatura) && temperatura >= ranges.temp_min_c && temperatura <= ranges.temp_max_c;
+
+        if (enRangoPh && enRangoTemp) {
+          consejo = 'Vas bien, sigue cuidando el ambiente y mantén las mediciones periódicas.';
+        } else if (!enRangoTemp && enRangoPh) {
+          consejo = 'La temperatura está algo fuera del ideal; ubica el tanque en un sitio más fresco o ventilado para estabilizar.';
+        } else if (!enRangoPh && enRangoTemp) {
+          consejo = 'El pH se está saliendo del ideal; revisa la ventilación y evita cambios bruscos para que el proceso se equilibre.';
+        } else {
+          consejo = 'Ajusta el ambiente: busca un lugar más fresco y estable y sigue midiendo; el proceso se irá acomodando.';
         }
-      } catch (n8nError) {
-        console.log('n8n webhook no disponible, usando fallback:', n8nError.message);
       }
 
-      // Fallback: Si n8n no está disponible, usar OpenAI directamente
-      if (!this.openaiApiKey || this.openaiApiKey === 'sk-your-openai-api-key-here') {
-        return { 
-          recomendacion: "El proceso va por buen camino, sigue vigilando de vez en cuando y mantén las condiciones estables." 
-        };
-      }
-
-      // Prompt específico para recomendaciones
-      const prompt = `Eres un experto en fermentación de café artesanal que conoce los perfiles ideales de fermentación para distintas variedades, procesos y fases.
-
-Recibirás los siguientes datos:
-- Del lote: la variedad ${medicionData.lote?.variedad || 'no especificada'}, el proceso ${medicionData.lote?.proceso || 'no especificado'} y el estado en el que se encuentra ${medicionData.lote?.estado || 'no especificado'}.
-- De la medición: pH ${medicionData.medicion?.ph || 'no medido'}, temperatura ${medicionData.medicion?.temperatura_c || 'no medida'}°C, material del tanque ${medicionData.tanque?.material || 'no especificado'} y hora de la medición ${medicionData.medicion?.timestamp || 'no registrada'}.
-
-Tu tarea es comparar los valores medidos con los ideales del perfil correspondiente, y generar un consejo breve y amigable sobre cómo ajustar las condiciones o continuar el proceso.
-
-Reglas:
-- Habla siempre en tono cálido y natural, como un amigo que da consejos prácticos ("la temperatura está algo alta, puedes mover el tanque a un sitio más fresco").
-- No menciones valores numéricos, porcentajes ni términos técnicos.
-- Si los valores están dentro del rango ideal, felicita o motiva con algo positivo ("va muy bien, sigue cuidando el ambiente y el tiempo de fermentación").
-- Si los valores están por encima o debajo de lo ideal, sugiere una acción sencilla para equilibrarlos.
-- Puedes tener en cuenta el material del tanque (por ejemplo, el plástico retiene más calor, el acero se enfría rápido).
-- Da una sola recomendación corta, de máximo dos frases, siempre en español.
-
-No uses listas ni lenguaje técnico. Solo devuelve el consejo final.`;
-
-      const response = await axios.post(`${this.openaiBaseUrl}/chat/completions`, {
-        model: 'gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: prompt }
-        ],
-        max_tokens: 200,
-        temperature: 0.8
-      }, {
-        headers: {
-          'Authorization': `Bearer ${this.openaiApiKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const recomendacion = response.data.choices[0].message.content;
-      
-      return { recomendacion };
+      return { recomendacion: consejo };
     } catch (error) {
       console.error('Error en recomendación IA:', error);
       

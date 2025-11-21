@@ -1,4 +1,5 @@
-import { N8N_ENDPOINTS, getN8nHeaders } from '../config/n8n';
+import { apiFetch } from '@/api/http';
+import { API } from '@/api/endpoints';
 
 /**
  * Interfaz para los datos de entrada de recomendaciones
@@ -43,20 +44,26 @@ export const n8nService = {
    */
   async getRecomendaciones(data: RecomendacionesInput): Promise<RecomendacionesResponse> {
     try {
-      const response = await fetch(N8N_ENDPOINTS.RECOMENDACIONES, {
+      const body = {
+        lote: {
+          variedad: data.variedad,
+          proceso: data.proceso,
+          estado: data.fase || 'inicio'
+        },
+        medicion: {
+          ph: data.ph,
+          temperatura_c: data.temperatura,
+          timestamp: new Date().toISOString()
+        }
+      } as any;
+      const resp = await apiFetch<{ recomendacion?: string; output?: string }>(API.ai.recomendacion(), {
         method: 'POST',
-        headers: getN8nHeaders(),
-        body: JSON.stringify(data),
+        body
       });
-      
-      if (!response.ok) {
-        throw new Error(`Error al obtener recomendaciones: ${response.status}`);
-      }
-      
-      return await response.json();
+      return { recomendaciones: [resp.recomendacion || resp.output || ''], sugerencias: [] } as RecomendacionesResponse;
     } catch (error) {
       console.error('Error en servicio de recomendaciones:', error);
-      throw error;
+      return { recomendaciones: [], error: (error as any)?.message || 'Error' };
     }
   },
   
@@ -67,20 +74,14 @@ export const n8nService = {
    */
   async chatAyuda(mensaje: string): Promise<ChatAyudaResponse> {
     try {
-      const response = await fetch(N8N_ENDPOINTS.CHAT_AYUDA, {
+      const resp = await apiFetch<{ response?: string; message?: string }>(API.ai.chat(), {
         method: 'POST',
-        headers: getN8nHeaders(),
-        body: JSON.stringify({ mensaje }),
+        body: { mensaje }
       });
-      
-      if (!response.ok) {
-        throw new Error(`Error en chat de ayuda: ${response.status}`);
-      }
-      
-      return await response.json();
+      return { respuesta: resp.response || resp.message || '' } as ChatAyudaResponse;
     } catch (error) {
       console.error('Error en servicio de chat de ayuda:', error);
-      throw error;
+      return { respuesta: '', error: (error as any)?.message || 'Error' };
     }
   },
 };

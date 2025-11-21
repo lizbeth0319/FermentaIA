@@ -3,6 +3,8 @@ import { Send, Mic, Bot } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { apiFetch } from "@/api/http";
+import { API } from "@/api/endpoints";
 
 const Chat = () => {
   const [messages, setMessages] = useState([
@@ -10,19 +12,28 @@ const Chat = () => {
   ]);
   const [input, setInput] = useState("");
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
     
     setMessages([...messages, { text: input, sender: "user" }]);
     setInput("");
     
-    // Simular respuesta del bot
-    setTimeout(() => {
-      setMessages(prev => [...prev, { 
-        text: "Entiendo tu consulta. Basándome en tus datos, te recomiendo revisar el pH del lote. ¿Necesitas más detalles?", 
-        sender: "bot" 
-      }]);
-    }, 1000);
+    try {
+      const resp = await apiFetch<{ response?: string; message?: string }>(API.ai.chatTest(), {
+        method: "POST",
+        body: { mensaje: input }
+      });
+      const text = String(resp.response ?? resp.message ?? "")
+        .replace(/undefined/gi, "")
+        .replace(/\s+\./g, ". ")
+        .replace(/\s{2,}/g, " ")
+        .replace(/\bPedo\b/gi, "Puedo")
+        .replace(/\bPra\b/gi, "Para")
+        .trim() || "Puedo ayudarte con el uso de la página y dudas de fermentación.";
+      setMessages(prev => [...prev, { text, sender: "bot" }]);
+    } catch {
+      setMessages(prev => [...prev, { text: "Hubo un problema temporal al responder. Intenta de nuevo.", sender: "bot" }]);
+    }
   };
 
   return (

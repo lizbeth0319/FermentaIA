@@ -90,7 +90,9 @@ export const API = {
   // IA
   ai: {
     chat: () => '/api/ai/chat',
-    recomendacion: () => '/api/ai/recomendacion'
+    recomendacion: () => '/api/ai/recomendacion',
+    chatTest: () => '/api/ai/test/chat',
+    recoTest: () => '/api/ai/test/recomendacion'
   }
 } as const;
 

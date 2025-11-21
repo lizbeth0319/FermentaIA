@@ -44,7 +44,7 @@ const Comparativas = () => {
           medicion: { ph: phActual, temperatura_c: tempActual, timestamp: new Date().toISOString() },
           tanque: {}
         };
-        const resp = await apiFetch<{ recomendacion?: string; output?: string }>(API.ai.recomendacion(), {
+        const resp = await apiFetch<{ recomendacion?: string; output?: string }>(API.ai.recoTest(), {
           method: "POST",
           body,
         });
